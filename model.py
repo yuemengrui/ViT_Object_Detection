@@ -144,7 +144,7 @@ class ViT(nn.Module):
 
         self.pool = pool
 
-        self.mlp_head = MLPHead(dim, dim, 3, 3)
+        self.mlp_head = MLPHead(dim, dim, 2, 3)
 
     def forward(self, img, target_img=None):
         x = self.to_patch_embedding(img)

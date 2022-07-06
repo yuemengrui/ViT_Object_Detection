@@ -157,7 +157,7 @@ class ViTDetDataset(Dataset):
             target, _ = self.target_resize(target)
             target = self.transform(target)
 
-            label = torch.from_numpy(np.array([c_x, c_y, 1]))
+            label = torch.from_numpy(np.array([c_x, c_y]))
 
             return img, target, label, torch.from_numpy(np.array([c_x_min, c_x_max, c_y_min, c_y_max]))
 
