@@ -30,7 +30,7 @@ class Trainer:
         self.configs = configs
 
         self.save_dir = self.configs.get('save_dir')
-        self.best_model_save_path = os.path.join(self.save_dir, 'model_best_old.pth')
+        self.best_model_save_path = os.path.join(self.save_dir, 'model_best.pth')
         if self.configs.get('device') == 'cpu':
             self.device = torch.device('cpu')
         else:
