@@ -205,7 +205,7 @@ class Trainer:
             self._load_checkpoint(resume_checkpoint)
         self.model.to(self.device)
 
-        self.criterion = nn.L1Loss()
+        self.criterion = nn.MSELoss()
 
         self.optimizer = optim.SGD(params=self.model.parameters(), lr=self.configs.get('lr'), momentum=0.9, dampening=0,
                                    weight_decay=1e-4)
