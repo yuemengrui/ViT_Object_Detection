@@ -243,8 +243,8 @@ if __name__ == '__main__':
     configs = {
         'save_dir': './checkpoints',
         'dataset_dir': '/data/guorui/ViT_DET/train_data',
-        'Epochs': 500,
-        'batch_size': 4,
+        'Epochs': 10000,
+        'batch_size': 32,
         'lr': 0.01,
         'Train': {
             'resume_checkpoint': ''
