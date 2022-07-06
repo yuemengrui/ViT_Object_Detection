@@ -110,7 +110,7 @@ class Transformer(nn.Module):
 
 class ViT(nn.Module):
 
-    def __init__(self, image_size=(512, 1024), patch_size=(32, 64), dim=768, depth=12, heads=8, mlp_dim=512, pool='mean',
+    def __init__(self, image_size=(512, 1024), patch_size=(32, 64), dim=768, depth=12, heads=12, mlp_dim=768, pool='mean',
                  channels=3, dim_head=64, dropout=0., emb_dropout=0.):
         super().__init__()
         image_height, image_width = pair(image_size)
@@ -175,7 +175,7 @@ class ViT(nn.Module):
 #     # image 1920 1080 -> 960 512
 #     # patch              60   32
 #     # patch_num          16   16
-#     model = ViT(image_size=(512, 1024), patch_size=(32, 64), dim=768, depth=6, heads=8, mlp_dim=512)
+#     model = ViT(image_size=(512, 1024), patch_size=(32, 64), dim=768, depth=12, heads=12, mlp_dim=768)
 #
 #     img = torch.randn((1, 3, 512, 1024))
 #
