@@ -76,7 +76,7 @@ class Trainer:
 
             self.optimizer.zero_grad()
             preds = self.model(img, target)
-            loss = self.criterion(preds, label)
+            loss = self.criterion(preds.float(), label.float())
             # backward
             loss.backward()
             self.optimizer.step()
