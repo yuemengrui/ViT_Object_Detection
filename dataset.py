@@ -168,38 +168,38 @@ class ViTDetDataset(Dataset):
     def __len__(self):
         return len(self.data_list)
 
-if __name__ == '__main__':
-    dataset = ViTDetDataset(dataset_dir='/Users/yuemengrui/Data/RPAUI/web_cv_data')
-    train_loader = DataLoader(dataset, batch_size=2, shuffle=True, drop_last=True)
-
-    for img, target, label, center_range in train_loader:
-        print(img.shape)
-        print(target.shape)
-        print(label.shape)
-        print(label)
-        print(center_range.numpy().tolist())
-        center_range = center_range.numpy().tolist()
-        preds = [[0.508238673210144, 0.4653865396976471, 0.49629437923431396], [0.2,0.2,0.2]]
-
-        for i in range(len(preds)):
-            print("==========================")
-            print(preds[i])
-            print(center_range[i])
-
-            pred_c_x = preds[i][0]
-            pred_c_y = preds[i][1]
-
-            print(pred_c_x, pred_c_y)
-
-            label_c_x_min = center_range[i][0]
-            label_c_x_max = center_range[i][1]
-            label_c_y_min = center_range[i][2]
-            label_c_y_max = center_range[i][3]
-
-            print(label_c_x_min, label_c_x_max)
-            print(label_c_y_min, label_c_y_max)
-
-
+# if __name__ == '__main__':
+#     dataset = ViTDetDataset(dataset_dir='/Users/yuemengrui/Data/RPAUI/web_cv_data')
+#     train_loader = DataLoader(dataset, batch_size=2, shuffle=True, drop_last=True)
+#
+#     for img, target, label, center_range in train_loader:
+#         print(img.shape)
+#         print(target.shape)
+#         print(label.shape)
+#         print(label)
+#         print(center_range.numpy().tolist())
+#         center_range = center_range.numpy().tolist()
+#         preds = [[0.508238673210144, 0.4653865396976471, 0.49629437923431396], [0.2,0.2,0.2]]
+#
+#         for i in range(len(preds)):
+#             print("==========================")
+#             print(preds[i])
+#             print(center_range[i])
+#
+#             pred_c_x = preds[i][0]
+#             pred_c_y = preds[i][1]
+#
+#             print(pred_c_x, pred_c_y)
+#
+#             label_c_x_min = center_range[i][0]
+#             label_c_x_max = center_range[i][1]
+#             label_c_y_min = center_range[i][2]
+#             label_c_y_max = center_range[i][3]
+#
+#             print(label_c_x_min, label_c_x_max)
+#             print(label_c_y_min, label_c_y_max)
+#
+#
         # x_min = center_range[0][0]
         # x_max = center_range[0][1]
         # y_min = center_range[1][0]
@@ -210,7 +210,7 @@ if __name__ == '__main__':
         # print(x_min < 0.4 < x_max)
         # print(x_min < 0.5 < x_max)
         # print(x_min < 0.6 < x_max)
-        break
+        # break
 
 # img, target, center_x, center_y, center_x_min, center_y_min, center_x_max, center_y_max = dataset[0]
 # print(img.shape)

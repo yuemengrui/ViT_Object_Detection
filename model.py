@@ -75,16 +75,11 @@ class Attention(nn.Module):
         ) if project_out else nn.Identity()
 
     def forward(self, x, target):
-        print('Attention input: ', x.shape)
         # qkv = self.to_qkv(x).chunk(3, dim=-1)
         # q, k, v = map(lambda t: rearrange(t, 'b n (h d) -> b h n d', h=self.heads), qkv)
         q = rearrange(self.to_q(target), 'b n (h d) -> b h n d', h=self.heads)
         k = rearrange(self.to_k(x), 'b n (h d) -> b h n d', h=self.heads)
         v = rearrange(self.to_v(x), 'b n (h d) -> b h n d', h=self.heads)
-
-        print('q: ', q.shape)
-        print('k: ', k.shape)
-        print('v: ', v.shape)
 
         dots = torch.matmul(q, k.transpose(-1, -2)) * self.scale
 
@@ -120,13 +115,11 @@ class ViT(nn.Module):
         super().__init__()
         image_height, image_width = pair(image_size)
         patch_height, patch_width = pair(patch_size)
-        print('img: ', image_height, image_width)
-        print('patch: ', patch_height, patch_width)
 
         assert image_height % patch_height == 0 and image_width % patch_width == 0, 'Image dimensions must be divisible by the patch size.'
 
         num_patches = (image_height // patch_height) * (image_width // patch_width)
-        print('patch_num: ', num_patches)
+
         patch_dim = channels * patch_height * patch_width
 
         assert pool in {'cls', 'mean'}, 'pool type must be either cls (cls token) or mean (mean pooling)'
@@ -142,9 +135,9 @@ class ViT(nn.Module):
         )
 
         self.pos_embedding = nn.Parameter(torch.randn(1, num_patches + 1, dim))
-        print('pos_embedding: ', self.pos_embedding.shape)
+
         self.cls_token = nn.Parameter(torch.randn(1, 1, dim))
-        print('cls_token: ', self.cls_token.shape)
+
         self.dropout = nn.Dropout(emb_dropout)
 
         self.transformer = Transformer(dim, depth, heads, dim_head, mlp_dim, dropout)
@@ -155,43 +148,39 @@ class ViT(nn.Module):
 
     def forward(self, img, target_img=None):
         x = self.to_patch_embedding(img)
-        print('patch_embedding: ', x.shape)
+
         target = self.to_target_embedding(target_img)
-        print('target: ', target.shape)
         b, n, _ = x.shape
         cls_tokens = repeat(self.cls_token, '1 1 d -> b 1 d', b=b)
-        print('cls_tokens: ', cls_tokens.shape)
+
         x = torch.cat((cls_tokens, x), dim=1)
-        print('111: ', x.shape)
+
         target = torch.cat((cls_tokens, target), dim=1)
-        print('target2 :', target.shape)
+
         x += self.pos_embedding[:, :(n + 1)]
-        print('222: ', x.shape)
+
         x = self.dropout(x)
 
         x = self.transformer(x, target)
-        print('333: ', x.shape)
 
         # x = x.mean(dim=1) if self.pool == 'mean' else x[:, 0]
         x = x.mean(dim=1)
-        print('444: ', x.shape)
 
         x = self.mlp_head(x)  # [x,y,h,w,score]
-        print('555: ', x.shape)
 
         return x.sigmoid()
 
 
-if __name__ == '__main__':
-    # image 1920 1080 -> 960 512
-    # patch              60   32
-    # patch_num          16   16
-    model = ViT(image_size=(512, 1024), patch_size=(32, 64), dim=768, depth=6, heads=8, mlp_dim=512)
-
-    img = torch.randn((1, 3, 512, 1024))
-
-    target_img = torch.randn((1, 3, 32, 64))
-
-    out = model(img, target_img)
-    print(out)
-    print(out.data.cpu().numpy().tolist())
+# if __name__ == '__main__':
+#     # image 1920 1080 -> 960 512
+#     # patch              60   32
+#     # patch_num          16   16
+#     model = ViT(image_size=(512, 1024), patch_size=(32, 64), dim=768, depth=6, heads=8, mlp_dim=512)
+#
+#     img = torch.randn((1, 3, 512, 1024))
+#
+#     target_img = torch.randn((1, 3, 32, 64))
+#
+#     out = model(img, target_img)
+#     print(out)
+#     print(out.data.cpu().numpy().tolist())
