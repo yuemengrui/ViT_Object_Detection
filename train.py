@@ -200,23 +200,25 @@ class Trainer:
     def _initialize(self):
         start = time.time()
         self.model = ViT()
-        resume_checkpoint = self.configs.get('Train', {}).get('resume_checkpoint', '')
-        if resume_checkpoint != '' and os.path.exists(resume_checkpoint):
-            self._load_checkpoint(resume_checkpoint)
-        self.model.to(self.device)
 
         self.criterion = nn.BCELoss()
 
         # self.optimizer = optim.SGD(params=self.model.parameters(), lr=self.configs.get('lr'), momentum=0.9, dampening=0,
         #                            weight_decay=1e-4)
-        # self.lr_scheduler = lr_scheduler.CosineAnnealingLR(optimizer=self.optimizer, T_max=500)
 
         self.optimizer = optim.AdamW(params=self.model.parameters(), lr=self.configs.get('lr'),
                                      weight_decay=self.configs.get('weight_decay'))
 
-        self.lr_scheduler = lr_scheduler.StepLR(optimizer=self.optimizer, step_size=50, gamma=0.9)
+        self.lr_scheduler = lr_scheduler.CosineAnnealingLR(optimizer=self.optimizer, T_max=500)
+
+        # self.lr_scheduler = lr_scheduler.StepLR(optimizer=self.optimizer, step_size=50, gamma=0.9)
 
         self.metric_cls = CenterMetric()
+
+        resume_checkpoint = self.configs.get('Train', {}).get('resume_checkpoint', '')
+        if resume_checkpoint != '' and os.path.exists(resume_checkpoint):
+            self._load_checkpoint(resume_checkpoint)
+        self.model.to(self.device)
 
         t = time.time()
         logger.basic.info('build model finished. time_cost:{:.2f}s\n'.format(t - start))
