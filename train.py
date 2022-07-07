@@ -207,10 +207,14 @@ class Trainer:
 
         self.criterion = nn.BCELoss()
 
-        self.optimizer = optim.SGD(params=self.model.parameters(), lr=self.configs.get('lr'), momentum=0.9, dampening=0,
-                                   weight_decay=1e-4)
+        # self.optimizer = optim.SGD(params=self.model.parameters(), lr=self.configs.get('lr'), momentum=0.9, dampening=0,
+        #                            weight_decay=1e-4)
+        # self.lr_scheduler = lr_scheduler.CosineAnnealingLR(optimizer=self.optimizer, T_max=500)
 
-        self.lr_scheduler = lr_scheduler.CosineAnnealingLR(optimizer=self.optimizer, T_max=500)
+        self.optimizer = optim.AdamW(params=self.model.parameters(), lr=self.configs.get('lr'),
+                                     weight_decay=self.configs.get('weight_decay'))
+
+        self.lr_scheduler = lr_scheduler.StepLR(optimizer=self.optimizer, step_size=10)
 
         self.metric_cls = CenterMetric()
 
@@ -245,7 +249,8 @@ if __name__ == '__main__':
         'dataset_dir': '/data/guorui/ViT_DET/train_data',
         'Epochs': 10000,
         'batch_size': 32,
-        'lr': 0.01,
+        'lr': 1e-4,
+        'weight_decay': 1e-4,
         'Train': {
             'resume_checkpoint': ''
         }
