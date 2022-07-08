@@ -21,6 +21,19 @@ class PreNorm(nn.Module):
         return self.fn(self.norm(x), target=target, **kwargs)
 
 
+class MatchHead(nn.Module):
+
+    def __init__(self):
+        super().__init__()
+        self.upsample = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)
+        self.conv = nn.Conv2d(1, 2, kernel_size=1, stride=1)
+
+    def forward(self, x):
+        x = self.upsample(x)
+        x = self.conv(x)
+        return x
+
+
 class MLPHead(nn.Module):
 
     def __init__(self, input_dim, hidden_dim, output_dim, num_layers):
@@ -103,14 +116,15 @@ class Transformer(nn.Module):
 
     def forward(self, x, target):
         for attn, ff in self.layers:
-            x = attn(x, target) + x
+            x = attn(x, target) + x + target
             x = ff(x) + x
         return x
 
 
 class ViT(nn.Module):
 
-    def __init__(self, image_size=(512, 1024), patch_size=(32, 64), dim=768, depth=12, heads=12, mlp_dim=768, pool='mean',
+    def __init__(self, image_size=(512, 1024), patch_size=(32, 64), dim=768, depth=12, heads=12, mlp_dim=768,
+                 pool='mean',
                  channels=3, dim_head=64, dropout=0., emb_dropout=0.):
         super().__init__()
         image_height, image_width = pair(image_size)
@@ -137,7 +151,7 @@ class ViT(nn.Module):
         # self.pos_embedding = nn.Parameter(torch.randn(1, num_patches + 1, dim))
         self.pos_embedding = nn.Parameter(torch.randn(1, num_patches, dim))
 
-        self.cls_token = nn.Parameter(torch.randn(1, 1, dim))
+        # self.cls_token = nn.Parameter(torch.randn(1, 1, dim))
 
         self.dropout = nn.Dropout(emb_dropout)
 
@@ -145,12 +159,14 @@ class ViT(nn.Module):
 
         self.pool = pool
 
-        self.mlp_head = MLPHead(dim, dim, 2, 3)
+        # self.mlp_head = MLPHead(dim, dim, 2, 3)
+        self.match_head = MatchHead()
 
     def forward(self, img, target_img=None):
         x = self.to_patch_embedding(img)
 
         target = self.to_target_embedding(target_img)
+
         b, n, _ = x.shape
         # cls_tokens = repeat(self.cls_token, '1 1 d -> b 1 d', b=b)
         #
@@ -165,23 +181,25 @@ class ViT(nn.Module):
         x = self.transformer(x, target)
 
         # x = x.mean(dim=1) if self.pool == 'mean' else x[:, 0]
-        x = x.mean(dim=1)
+        # x = x.mean(dim=1)
 
-        x = self.mlp_head(x)  # [x,y,h,w,score]
+        # x = self.mlp_head(x).sigmoid()  # [x,y,h,w,score]
+        x = x.unsqueeze(1)
+        # print('111: ', x.shape)
+        x = self.match_head(x)
 
-        return x.sigmoid()
+        return x
 
 
-# if __name__ == '__main__':
-#     # image 1920 1080 -> 960 512
-#     # patch              60   32
-#     # patch_num          16   16
-#     model = ViT(image_size=(512, 1024), patch_size=(32, 64), dim=768, depth=12, heads=12, mlp_dim=768)
-#
-#     img = torch.randn((1, 3, 512, 1024))
-#
-#     target_img = torch.randn((1, 3, 32, 64))
-#
-#     out = model(img, target_img)
-#     print(out.shape)
-#     print(out.data.cpu().numpy().tolist())
+if __name__ == '__main__':
+    # image 1920 1080 -> 960 512
+    # patch              60   32
+    # patch_num          16   16
+    model = ViT(image_size=(512, 1024), patch_size=(32, 64), dim=512, depth=6, heads=12, mlp_dim=512)
+
+    img = torch.randn((1, 3, 512, 1024))
+
+    target_img = torch.randn((1, 3, 32, 64))
+
+    out = model(img, target_img)
+    print(out.shape)
