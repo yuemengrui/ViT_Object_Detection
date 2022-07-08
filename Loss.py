@@ -26,7 +26,7 @@ class DiceLoss(nn.Module):
 
 
 class FocalLoss(nn.Module):
-    def __init__(self, alpha=0.25, gamma=2.0, use_sigmoid=True):
+    def __init__(self, alpha=0.1, gamma=2.0, use_sigmoid=True):
         super().__init__()
         self.alpha = alpha
         self.gamma = gamma
