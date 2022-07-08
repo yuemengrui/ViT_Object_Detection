@@ -39,7 +39,7 @@ class Trainer:
 
         self._initialize()
 
-        self.metrics = {'acc': 0, 'loss': float('inf'), 'best_model_epoch': 0}
+        self.metrics = {'MeanIoU': 0, 'acc': 0, 'loss': float('inf'), 'best_model_epoch': 0}
 
     def train(self):
         """
