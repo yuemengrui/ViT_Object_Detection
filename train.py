@@ -11,6 +11,7 @@ from torch.utils.data import DataLoader
 from model import ViT
 from dataset import ViTSegDataset
 from metrics import CenterMetric, SegMetrics
+from Loss import DiceLoss, FocalLoss
 import logger as logger
 
 
@@ -134,7 +135,7 @@ class Trainer:
             self._save_checkpoint(self.epoch_result['epoch'])
             logger.val.info("Saving best model")
 
-        if self.epoch_result['epoch'] % 50 == 0:
+        if self.epoch_result['epoch'] % 100 == 0:
             checkpoint_path = os.path.join(self.save_dir, 'epoch_{}.pth'.format(self.epoch_result['epoch']))
             self._save_checkpoint(self.epoch_result['epoch'], path=checkpoint_path)
 
@@ -200,8 +201,10 @@ class Trainer:
         self.model = ViT(dim=512, depth=6, heads=12, mlp_dim=512)
 
         # self.criterion = nn.BCELoss()
-        weight = torch.tensor([1, 20.0]).to(self.device)
-        self.criterion = nn.CrossEntropyLoss(weight=weight, size_average=True, ignore_index=255, reduction='mean')
+        # weight = torch.tensor([1, 90.0]).to(self.device)
+        # self.criterion = nn.CrossEntropyLoss(weight=weight, size_average=True, ignore_index=255, reduction='mean')
+
+        self.criterion = FocalLoss()
 
         # self.optimizer = optim.SGD(params=self.model.parameters(), lr=self.configs.get('lr'), momentum=0.9, dampening=0,
         #                            weight_decay=1e-4)
@@ -251,8 +254,8 @@ if __name__ == '__main__':
         'save_dir': './checkpoints',
         'dataset_dir': '/data/guorui/ViT_DET/train_data',
         'Epochs': 10000,
-        'batch_size': 32,
-        'lr': 1e-3,
+        'batch_size': 64,
+        'lr': 6e-4,
         'weight_decay': 1e-4,
         'Train': {
             'resume_checkpoint': ''
