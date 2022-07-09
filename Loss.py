@@ -37,8 +37,12 @@ class FocalLoss(nn.Module):
     def forward(self, pred: torch.Tensor, target: torch.Tensor):
         if self.use_sigmoid:
             pred = self.sigmoid(pred)
+        print('pred: ',pred.shape)
+        print('label: ',target.shape)
         pred = pred.view(-1)
+        print('pred: ',pred.shape)
         label = target.view(-1)
+        print('label: ',label.shape)
         pos = torch.nonzero(label > 0).squeeze(1)
         pos_num = max(pos.numel(), 1.0)
         mask = ~(label == -1)
