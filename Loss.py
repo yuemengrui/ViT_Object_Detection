@@ -3,6 +3,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torch.autograd import Variable
 
 
 class DiceLoss(nn.Module):
@@ -37,12 +38,8 @@ class FocalLoss(nn.Module):
     def forward(self, pred: torch.Tensor, target: torch.Tensor):
         if self.use_sigmoid:
             pred = self.sigmoid(pred)
-        print('pred: ',pred.shape)
-        print('label: ',target.shape)
         pred = pred.view(-1)
-        print('pred: ',pred.shape)
         label = target.view(-1)
-        print('label: ',label.shape)
         pos = torch.nonzero(label > 0).squeeze(1)
         pos_num = max(pos.numel(), 1.0)
         mask = ~(label == -1)
@@ -52,3 +49,20 @@ class FocalLoss(nn.Module):
                 1 - self.alpha) * pred.abs().pow(self.gamma) * (label <= 0.0).float()
         loss = F.binary_cross_entropy(pred, label, reduction='none') * focal_weight
         return loss.sum() / pos_num
+
+
+
+
+
+
+if __name__ == '__main__':
+    pred = torch.randn((2, 1, 4, 4))
+    pred = pred.squeeze(1)
+    print(pred.shape)
+    label = torch.randn((2, 4, 4))
+    print(label)
+
+    loss_func = DiceLoss()
+
+    l = loss_func(pred, label)
+    print(l)

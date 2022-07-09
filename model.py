@@ -26,7 +26,7 @@ class MatchHead(nn.Module):
     def __init__(self):
         super().__init__()
         self.upsample = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)
-        self.conv = nn.Conv2d(1, 2, kernel_size=1, stride=1)
+        self.conv = nn.Conv2d(1, 1, kernel_size=1, stride=1)
 
     def forward(self, x):
         x = self.upsample(x)
