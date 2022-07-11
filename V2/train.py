@@ -4,12 +4,11 @@ import os
 import torch
 import torch.nn as nn
 import time
-import numpy as np
 import torch.optim as optim
 import torch.optim.lr_scheduler as lr_scheduler
 from torch.utils.data import DataLoader
-from V2.model import MatchNet
-from V2.dataset import ViTDetDataset
+from model import MatchNet
+from dataset import ViTDetDataset
 from metrics import CenterMetric
 import logger as logger
 
