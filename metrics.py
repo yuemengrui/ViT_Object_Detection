@@ -1,6 +1,7 @@
 # *_*coding:utf-8 *_*
 # @Author : YueMengRui
 import numpy as np
+import logger as logger
 
 
 class CenterMetric(object):
@@ -12,15 +13,20 @@ class CenterMetric(object):
     def __call__(self, preds, labels, *args, **kwargs):
         correct_num = 0
         all_num = 0
+        logger.val.info('preds: {}'.format(str(preds)))
+        logger.val.info('labels: {}'.format(str(labels)))
         for i in range(len(preds)):
 
             pred_c_x = preds[i][0]
             pred_c_y = preds[i][1]
+            logger.val.info('pred_c_x: {} pred_c_y:{}'.format(pred_c_x, pred_c_y))
 
             label_c_x_min = labels[i][0]
             label_c_x_max = labels[i][1]
             label_c_y_min = labels[i][2]
             label_c_y_max = labels[i][3]
+            logger.val.info('label_c_x_min:{} label_c_x_max:{}'.format(label_c_x_min, label_c_x_max))
+            logger.val.info('label_c_y_min:{} label_c_y_max:{}'.format(label_c_y_min, label_c_y_max))
 
             if label_c_x_min <= pred_c_x <= label_c_x_max and label_c_y_min <= pred_c_y <= label_c_y_max:
                 correct_num += 1
