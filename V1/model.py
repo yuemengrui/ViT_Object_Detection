@@ -90,6 +90,7 @@ class Attention(nn.Module):
     def forward(self, x, target):
         # qkv = self.to_qkv(x).chunk(3, dim=-1)
         # q, k, v = map(lambda t: rearrange(t, 'b n (h d) -> b h n d', h=self.heads), qkv)
+
         q = rearrange(self.to_q(target), 'b n (h d) -> b h n d', h=self.heads)
         k = rearrange(self.to_k(x), 'b n (h d) -> b h n d', h=self.heads)
         v = rearrange(self.to_v(x), 'b n (h d) -> b h n d', h=self.heads)
@@ -159,7 +160,7 @@ class ViT(nn.Module):
 
         self.pool = pool
 
-        # self.mlp_head = MLPHead(dim, dim, 2, 3)
+        self.mlp_head = MLPHead(dim, dim, 2, 3)
         self.match_head = MatchHead()
 
     def forward(self, img, target_img=None):
@@ -181,12 +182,12 @@ class ViT(nn.Module):
         x = self.transformer(x, target)
 
         # x = x.mean(dim=1) if self.pool == 'mean' else x[:, 0]
-        # x = x.mean(dim=1)
+        x = x.mean(dim=1)
 
-        # x = self.mlp_head(x).sigmoid()  # [x,y,h,w,score]
-        x = x.unsqueeze(1)
+        x = self.mlp_head(x).sigmoid()  # [x,y,h,w,score]
+        # x = x.unsqueeze(1)
         # print('111: ', x.shape)
-        x = self.match_head(x)
+        # x = self.match_head(x)
 
         return x
 

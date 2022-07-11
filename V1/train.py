@@ -4,14 +4,13 @@ import os
 import torch
 import time
 import numpy as np
-import torch.nn as nn
 import torch.optim as optim
 import torch.optim.lr_scheduler as lr_scheduler
 from torch.utils.data import DataLoader
-from model import ViT
-from dataset import ViTSegDataset
-from metrics import CenterMetric, SegMetrics
-from Loss import DiceLoss, FocalLoss
+from V1.model import ViT
+from V1.dataset import ViTSegDataset
+from metrics import SegMetrics
+from V1.Loss import FocalLoss
 import logger as logger
 
 
