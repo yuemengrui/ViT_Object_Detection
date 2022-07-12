@@ -116,23 +116,28 @@ class Transformer(nn.Module):
             ]))
 
     def forward(self, x, target):
+        out_list = []
         for attn, ff in self.layers:
-            x = attn(x, target) + target
-            x = ff(x) + x
-        return x
+            out = attn(x, target) + target
+            out = ff(out) + out
+            out_list.append(out)
+        output = out_list[0]
+        for i in range(1, len(out_list)):
+            output += out_list[i]
+        return output
 
 
 class ViT(nn.Module):
 
-    def __init__(self, patch_size=(32, 64), dim=512, depth=6, heads=8, mlp_dim=512, channels=3, dim_head=64, dropout=0.,
-                 emb_dropout=0.):
+    def __init__(self, image_size=(512, 1024), patch_size=(32, 64), dim=512, depth=6, heads=8, mlp_dim=512, channels=3,
+                 dim_head=64, dropout=0., emb_dropout=0.):
         super().__init__()
-        # image_height, image_width = pair(image_size)
+        image_height, image_width = pair(image_size)
         patch_height, patch_width = pair(patch_size)
         #
         # assert image_height % patch_height == 0 and image_width % patch_width == 0, 'Image dimensions must be divisible by the patch size.'
 
-        # num_patches = (image_height // patch_height) * (image_width // patch_width)
+        num_patches = (image_height // patch_height) * (image_width // patch_width)
 
         patch_dim = channels * patch_height * patch_width
 
@@ -149,7 +154,7 @@ class ViT(nn.Module):
         )
 
         # self.pos_embedding = nn.Parameter(torch.randn(1, num_patches + 1, dim))
-        # self.pos_embedding = nn.Parameter(torch.randn(1, num_patches, dim))
+        self.pos_embedding = nn.Parameter(torch.randn(1, num_patches, dim))
 
         # self.cls_token = nn.Parameter(torch.randn(1, 1, dim))
 
@@ -167,19 +172,19 @@ class ViT(nn.Module):
 
         target = self.to_target_embedding(target_img)
 
-        # b, n, _ = x.shape
+        b, n, _ = x.shape
         # cls_tokens = repeat(self.cls_token, '1 1 d -> b 1 d', b=b)
         #
         # x = torch.cat((cls_tokens, x), dim=1)
         #
         # target = torch.cat((cls_tokens, target), dim=1)
 
-        # x += self.pos_embedding[:, :(n + 1)]
-        #
+        x += self.pos_embedding[:, :(n + 1)]
+
         # x = self.dropout(x)
         #
         x = self.transformer(x, target)
-        # print('tansform out: ', x.shape)
+        # print('transformer out: ', x.shape)
 
         # # x = x.mean(dim=1) if self.pool == 'mean' else x[:, 0]
         x = x.mean(dim=1)
