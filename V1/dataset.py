@@ -72,7 +72,7 @@ class ImageResize(object):
 
 class ViTDetDataset(Dataset):
 
-    def __init__(self, dataset_dir, mode='train', target_size_range=(10, 300), threshold=0.4, **kwargs):
+    def __init__(self, dataset_dir, mode='train', target_size_range=(10, 300), threshold=0.5, **kwargs):
 
         self.target_size_range = target_size_range
         self.threshold = threshold

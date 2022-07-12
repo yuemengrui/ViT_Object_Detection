@@ -249,10 +249,10 @@ class Trainer:
 
 if __name__ == '__main__':
     configs = {
-        'save_dir': './checkpoints',
+        'save_dir': './checkpoints_2',
         'dataset_dir': '/data/guorui/ViT_DET/train_data',
         'Epochs': 10000,
-        'batch_size': 8,
+        'batch_size': 64,
         'lr': 2e-4,
         'weight_decay': 1e-4,
         'Train': {

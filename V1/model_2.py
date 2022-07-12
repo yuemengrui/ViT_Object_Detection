@@ -17,8 +17,8 @@ class PreNorm(nn.Module):
         self.norm = nn.LayerNorm(dim)
         self.fn = fn
 
-    def forward(self, x, target=None, **kwargs):
-        return self.fn(self.norm(x), target=target, **kwargs)
+    def forward(self, x, **kwargs):
+        return self.fn(self.norm(x), **kwargs)
 
 
 class MatchHead(nn.Module):
@@ -61,7 +61,7 @@ class FeedForward(nn.Module):
             nn.Dropout(dropout)
         )
 
-    def forward(self, x, **kwargs):
+    def forward(self, x):
         return self.net(x)
 
 
@@ -77,23 +77,16 @@ class Attention(nn.Module):
         self.attend = nn.Softmax(dim=-1)
         self.dropout = nn.Dropout(dropout)
 
-        # self.to_qkv = nn.Linear(dim, inner_dim * 3, bias=False)
-        self.to_q = nn.Linear(dim, inner_dim, bias=False)
-        self.to_k = nn.Linear(dim, inner_dim, bias=False)
-        self.to_v = nn.Linear(dim, inner_dim, bias=False)
+        self.to_qkv = nn.Linear(dim, inner_dim * 3, bias=False)
 
         self.to_out = nn.Sequential(
             nn.Linear(inner_dim, dim),
             nn.Dropout(dropout)
         ) if project_out else nn.Identity()
 
-    def forward(self, x, target):
-        # qkv = self.to_qkv(x).chunk(3, dim=-1)
-        # q, k, v = map(lambda t: rearrange(t, 'b n (h d) -> b h n d', h=self.heads), qkv)
-
-        q = rearrange(self.to_q(target), 'b n (h d) -> b h n d', h=self.heads)
-        k = rearrange(self.to_k(x), 'b n (h d) -> b h n d', h=self.heads)
-        v = rearrange(self.to_v(x), 'b n (h d) -> b h n d', h=self.heads)
+    def forward(self, x):
+        qkv = self.to_qkv(x).chunk(3, dim=-1)
+        q, k, v = map(lambda t: rearrange(t, 'b n (h d) -> b h n d', h=self.heads), qkv)
 
         dots = torch.matmul(q, k.transpose(-1, -2)) * self.scale
 
@@ -115,39 +108,28 @@ class Transformer(nn.Module):
                 PreNorm(dim, FeedForward(dim, mlp_dim, dropout=dropout))
             ]))
 
-    def forward(self, x, target):
-        out_list = []
+    def forward(self, x):
         for attn, ff in self.layers:
-            out = attn(x, target) + target
-            out = ff(out) + out
-            out_list.append(out)
-
-        output = out_list[0]
-        print(output)
-        for i in range(1, len(out_list)):
-            print(out_list[i])
-            output += out_list[i]
-            print(output)
-            print('=========================================')
-
-        return output
+            x = attn(x) + x
+            x = ff(x) + x
+        return x
 
 
 class ViT(nn.Module):
 
     def __init__(self, image_size=(512, 1024), patch_size=(32, 64), dim=512, depth=6, heads=8, mlp_dim=512, channels=3,
-                 dim_head=64, dropout=0., emb_dropout=0.):
+                 dim_head=64, dropout=0., emb_dropout=0., pool='cls'):
         super().__init__()
         image_height, image_width = pair(image_size)
         patch_height, patch_width = pair(patch_size)
-        #
-        # assert image_height % patch_height == 0 and image_width % patch_width == 0, 'Image dimensions must be divisible by the patch size.'
+
+        assert image_height % patch_height == 0 and image_width % patch_width == 0, 'Image dimensions must be divisible by the patch size.'
 
         num_patches = (image_height // patch_height) * (image_width // patch_width)
 
         patch_dim = channels * patch_height * patch_width
 
-        # assert pool in {'cls', 'mean'}, 'pool type must be either cls (cls token) or mean (mean pooling)'
+        assert pool in {'cls', 'mean'}, 'pool type must be either cls (cls token) or mean (mean pooling)'
 
         self.to_patch_embedding = nn.Sequential(
             Rearrange('b c (h p1) (w p2) -> b (h w) (p1 p2 c)', p1=patch_height, p2=patch_width),
@@ -159,8 +141,8 @@ class ViT(nn.Module):
             nn.Linear(patch_dim, dim)
         )
 
-        # self.pos_embedding = nn.Parameter(torch.randn(1, num_patches + 1, dim))
-        self.pos_embedding = nn.Parameter(torch.randn(1, num_patches, dim))
+        self.pos_embedding = nn.Parameter(torch.randn(1, num_patches + 1, dim))
+        # self.pos_embedding = nn.Parameter(torch.randn(1, num_patches, dim))
 
         # self.cls_token = nn.Parameter(torch.randn(1, 1, dim))
 
@@ -168,9 +150,9 @@ class ViT(nn.Module):
 
         self.transformer = Transformer(dim, depth, heads, dim_head, mlp_dim, dropout)
 
-        # self.pool = pool
+        self.pool = pool
 
-        self.mlp_head = MLPHead(dim, 256, 2, 3)
+        self.mlp_head = MLPHead(dim, dim, 2, 3)
         # self.match_head = MatchHead()
 
     def forward(self, img, target_img=None):
@@ -181,7 +163,8 @@ class ViT(nn.Module):
         b, n, _ = x.shape
         # cls_tokens = repeat(self.cls_token, '1 1 d -> b 1 d', b=b)
         #
-        # x = torch.cat((cls_tokens, x), dim=1)
+        x = torch.cat((target, x), dim=1)
+
         #
         # target = torch.cat((cls_tokens, target), dim=1)
 
@@ -189,12 +172,9 @@ class ViT(nn.Module):
 
         # x = self.dropout(x)
         #
-        x = self.transformer(x, target)
-        # print('transformer out: ', x.shape)
+        x = self.transformer(x)
 
-        # # x = x.mean(dim=1) if self.pool == 'mean' else x[:, 0]
-        x = x.mean(dim=1)
-        # print('mean: ', x.shape)
+        x = x.mean(dim=1) if self.pool == 'mean' else x[:, 0]
 
         x = self.mlp_head(x).sigmoid()  # [x,y,h,w,score]
         # x = x.unsqueeze(1)
@@ -216,3 +196,4 @@ if __name__ == '__main__':
 
     out = model(img, target_img)
     print(out.shape)
+    print(out)
