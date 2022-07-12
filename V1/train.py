@@ -4,13 +4,14 @@ import os
 import torch
 import time
 import numpy as np
+import torch.nn as nn
 import torch.optim as optim
 import torch.optim.lr_scheduler as lr_scheduler
 from torch.utils.data import DataLoader
-from V1.model import ViT
-from V1.dataset import ViTSegDataset
-from metrics import SegMetrics
-from V1.Loss import FocalLoss
+from model import ViT
+from dataset import ViTDetDataset
+from metrics import CenterMetric
+# from Loss import FocalLoss
 import logger as logger
 
 
@@ -57,7 +58,7 @@ class Trainer:
         train_loss = 0.0
 
         batch_start = time.time()
-        for i, (img, target, label) in enumerate(self.train_loader):
+        for i, (img, target, label, _) in enumerate(self.train_loader):
             self.global_step += 1
             lr = self.optimizer.param_groups[0]['lr']
 
@@ -71,7 +72,7 @@ class Trainer:
 
             self.optimizer.zero_grad()
             preds = self.model(img, target)
-            loss = self.criterion(preds, label.long())
+            loss = self.criterion(preds.float(), label.float())
             # backward
             loss.backward()
             self.optimizer.step()
@@ -97,23 +98,21 @@ class Trainer:
         total_frame = 0.0
         eval_start = time.time()
         # batch_start = time.time()
-        for img, target, label in self.val_loader:
+        for img, target, label, center_range in self.val_loader:
             with torch.no_grad():
                 img = img.to(self.device)
                 target = target.to(self.device)
-                label = label.to(self.device)
 
                 preds = self.model(img, target)
-                preds = preds.data.cpu().numpy()
-                label = label.cpu().numpy()
-                pred = np.argmax(preds, axis=1)
+                preds = preds.data.cpu().numpy().tolist()
+                center_range = center_range.numpy().tolist()
 
-                self.metric_cls.update(label, pred)
+                _ = self.metric_cls(preds, center_range)
                 # batch_cost = time.time() - batch_start
                 total_frame += img.size()[0]
                 # batch_start = time.time()
 
-        metrics = self.metric_cls.get_results()
+        metrics = self.metric_cls.get_metric()
 
         logger.val.info(
             'eval finished. {} FPS:{:.2f}'.format(str(metrics), total_frame / (time.time() - eval_start)))
@@ -126,7 +125,7 @@ class Trainer:
 
         metrics, eval_cost = self._eval()
 
-        if metrics['MeanIoU'] >= self.metrics['MeanIoU']:
+        if metrics['acc'] >= self.metrics['acc']:
             self.metrics['loss'] = self.epoch_result['loss']
             self.metrics.update(metrics)
             self.metrics['best_model_epoch'] = self.epoch_result['epoch']
@@ -197,13 +196,13 @@ class Trainer:
     def _initialize(self):
         start = time.time()
         # self.model = ViT(dim=768, depth=6, heads=12, mlp_dim=768)
-        self.model = ViT(dim=512, depth=6, heads=12, mlp_dim=512)
+        self.model = ViT(dim=512, depth=6, heads=8, mlp_dim=512)
 
-        # self.criterion = nn.BCELoss()
+        self.criterion = nn.BCELoss()
         # weight = torch.tensor([1, 90.0]).to(self.device)
         # self.criterion = nn.CrossEntropyLoss(weight=weight, size_average=True, ignore_index=255, reduction='mean')
 
-        self.criterion = FocalLoss()
+        # self.criterion = FocalLoss()
 
         # self.optimizer = optim.SGD(params=self.model.parameters(), lr=self.configs.get('lr'), momentum=0.9, dampening=0,
         #                            weight_decay=1e-4)
@@ -215,8 +214,8 @@ class Trainer:
 
         # self.lr_scheduler = lr_scheduler.StepLR(optimizer=self.optimizer, step_size=50, gamma=0.9)
 
-        # self.metric_cls = CenterMetric()
-        self.metric_cls = SegMetrics()
+        self.metric_cls = CenterMetric()
+        # self.metric_cls = SegMetrics()
 
         resume_checkpoint = self.configs.get('Train', {}).get('resume_checkpoint', '')
         if resume_checkpoint != '' and os.path.exists(resume_checkpoint):
@@ -227,8 +226,8 @@ class Trainer:
         logger.basic.info('build model finished. time_cost:{:.2f}s\n'.format(t - start))
         logger.basic.info('start load dataset')
 
-        train_dataset = ViTSegDataset(self.configs.get('dataset_dir'))
-        val_dataset = ViTSegDataset(self.configs.get('dataset_dir'), mode='val')
+        train_dataset = ViTDetDataset(self.configs.get('dataset_dir'))
+        val_dataset = ViTDetDataset(self.configs.get('dataset_dir'), mode='val')
         self.train_data_total = len(train_dataset)
         self.val_data_total = len(val_dataset)
 
@@ -253,8 +252,8 @@ if __name__ == '__main__':
         'save_dir': './checkpoints',
         'dataset_dir': '/data/guorui/ViT_DET/train_data',
         'Epochs': 10000,
-        'batch_size': 64,
-        'lr': 6e-4,
+        'batch_size': 8,
+        'lr': 2e-4,
         'weight_decay': 1e-4,
         'Train': {
             'resume_checkpoint': ''

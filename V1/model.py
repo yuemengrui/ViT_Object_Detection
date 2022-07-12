@@ -117,40 +117,39 @@ class Transformer(nn.Module):
 
     def forward(self, x, target):
         for attn, ff in self.layers:
-            x = attn(x, target) + x + target
+            x = attn(x, target) + target
             x = ff(x) + x
         return x
 
 
 class ViT(nn.Module):
 
-    def __init__(self, image_size=(512, 1024), patch_size=(32, 64), dim=768, depth=12, heads=12, mlp_dim=768,
-                 pool='mean',
-                 channels=3, dim_head=64, dropout=0., emb_dropout=0.):
+    def __init__(self, patch_size=(32, 64), dim=512, depth=6, heads=8, mlp_dim=512, channels=3, dim_head=64, dropout=0.,
+                 emb_dropout=0.):
         super().__init__()
-        image_height, image_width = pair(image_size)
+        # image_height, image_width = pair(image_size)
         patch_height, patch_width = pair(patch_size)
+        #
+        # assert image_height % patch_height == 0 and image_width % patch_width == 0, 'Image dimensions must be divisible by the patch size.'
 
-        assert image_height % patch_height == 0 and image_width % patch_width == 0, 'Image dimensions must be divisible by the patch size.'
-
-        num_patches = (image_height // patch_height) * (image_width // patch_width)
+        # num_patches = (image_height // patch_height) * (image_width // patch_width)
 
         patch_dim = channels * patch_height * patch_width
 
-        assert pool in {'cls', 'mean'}, 'pool type must be either cls (cls token) or mean (mean pooling)'
+        # assert pool in {'cls', 'mean'}, 'pool type must be either cls (cls token) or mean (mean pooling)'
 
         self.to_patch_embedding = nn.Sequential(
             Rearrange('b c (h p1) (w p2) -> b (h w) (p1 p2 c)', p1=patch_height, p2=patch_width),
-            nn.Linear(patch_dim, dim),
+            nn.Linear(patch_dim, dim)
         )
 
         self.to_target_embedding = nn.Sequential(
-            Rearrange('b c (pn1 h) (pn2 w) -> b (pn1 pn2) (h w c)', pn1=16, pn2=16),
-            nn.Linear(24, dim),
+            Rearrange('b c (pn1 h) (pn2 w) -> b (pn1 pn2) (h w c)', pn1=1, pn2=1),
+            nn.Linear(patch_dim, dim)
         )
 
         # self.pos_embedding = nn.Parameter(torch.randn(1, num_patches + 1, dim))
-        self.pos_embedding = nn.Parameter(torch.randn(1, num_patches, dim))
+        # self.pos_embedding = nn.Parameter(torch.randn(1, num_patches, dim))
 
         # self.cls_token = nn.Parameter(torch.randn(1, 1, dim))
 
@@ -158,31 +157,33 @@ class ViT(nn.Module):
 
         self.transformer = Transformer(dim, depth, heads, dim_head, mlp_dim, dropout)
 
-        self.pool = pool
+        # self.pool = pool
 
         self.mlp_head = MLPHead(dim, dim, 2, 3)
-        self.match_head = MatchHead()
+        # self.match_head = MatchHead()
 
     def forward(self, img, target_img=None):
         x = self.to_patch_embedding(img)
 
         target = self.to_target_embedding(target_img)
 
-        b, n, _ = x.shape
+        # b, n, _ = x.shape
         # cls_tokens = repeat(self.cls_token, '1 1 d -> b 1 d', b=b)
         #
         # x = torch.cat((cls_tokens, x), dim=1)
         #
         # target = torch.cat((cls_tokens, target), dim=1)
 
-        x += self.pos_embedding[:, :(n + 1)]
-
-        x = self.dropout(x)
-
+        # x += self.pos_embedding[:, :(n + 1)]
+        #
+        # x = self.dropout(x)
+        #
         x = self.transformer(x, target)
+        # print('tansform out: ', x.shape)
 
-        # x = x.mean(dim=1) if self.pool == 'mean' else x[:, 0]
+        # # x = x.mean(dim=1) if self.pool == 'mean' else x[:, 0]
         x = x.mean(dim=1)
+        # print('mean: ', x.shape)
 
         x = self.mlp_head(x).sigmoid()  # [x,y,h,w,score]
         # x = x.unsqueeze(1)
@@ -196,7 +197,7 @@ if __name__ == '__main__':
     # image 1920 1080 -> 960 512
     # patch              60   32
     # patch_num          16   16
-    model = ViT(image_size=(512, 1024), patch_size=(32, 64), dim=512, depth=6, heads=12, mlp_dim=512)
+    model = ViT(patch_size=(32, 64), dim=512, depth=6, heads=8, mlp_dim=512)
 
     img = torch.randn((1, 3, 512, 1024))
 
