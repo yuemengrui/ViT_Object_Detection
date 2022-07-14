@@ -7,6 +7,7 @@ import cv2
 import json
 import torch
 import random
+import time
 from torchvision import transforms
 from torch.utils.data import DataLoader
 
@@ -30,6 +31,15 @@ def iou(box1, box2):
 
 def crop_ok(target_box, boxes, threshold=0.5):
     for box in boxes:
+        if box[0] > target_box[2]:
+            continue
+
+        if box[2] < target_box[0]:
+            continue
+
+        if box[1] > target_box[3]:
+            break
+
         if iou(target_box, box) > threshold:
             return True
 
@@ -257,11 +267,14 @@ class ViTSegDataset(Dataset):
 # if __name__ == '__main__':
 #     dataset = ViTSegDataset(dataset_dir='/Users/yuemengrui/Data/RPAUI/web_cv_data')
 #     rate = 0
+#     start = time.time()
 #     for i in range(100):
-#         img, target, label, r = dataset[i]
-#         rate += r
-#     print(rate / 100)
-#     print(100 / rate)
+#         img, target, label = dataset[i]
+#     print(time.time()-start)
+# 105 99.5 113
+# 57  73.6 74
+# 28.7 31 24
+
 # cv2.imshow('im', img)
 # cv2.waitKey(0)
 #
