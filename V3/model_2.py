@@ -11,89 +11,89 @@ def pair(t):
     return t if isinstance(t, tuple) else (t, t)
 
 
-def conv(in_planes, out_planes, kernel_size=3, stride=1, padding=1, dilation=1):
-    return nn.Sequential(
-        nn.Conv2d(in_planes, out_planes, kernel_size=kernel_size, stride=stride,
-                  padding=padding, dilation=dilation, bias=True),
-        nn.BatchNorm2d(out_planes),
-        nn.ReLU(inplace=True))
+# def conv(in_planes, out_planes, kernel_size=3, stride=1, padding=1, dilation=1):
+#     return nn.Sequential(
+#         nn.Conv2d(in_planes, out_planes, kernel_size=kernel_size, stride=stride,
+#                   padding=padding, dilation=dilation, bias=True),
+#         nn.BatchNorm2d(out_planes),
+#         nn.ReLU(inplace=True))
 
 
-class CornerHead(nn.Module):
-
-    def __init__(self, inplanes=3, channel=32):
-        super().__init__()
-        '''top-left corner'''
-        self.conv1_tl = conv(inplanes, channel)
-        self.conv2_tl = conv(channel, channel // 2)
-        self.conv3_tl = conv(channel // 2, channel // 4)
-        self.conv4_tl = conv(channel // 4, channel // 8)
-        self.conv5_tl = nn.Conv2d(channel // 8, 1, kernel_size=1)
-        self.fc_tl = nn.Linear(512*1024, 2)
-
-        '''bottom-right corner'''
-        self.conv1_br = conv(inplanes, channel)
-        self.conv2_br = conv(channel, channel // 2)
-        self.conv3_br = conv(channel // 2, channel // 4)
-        self.conv4_br = conv(channel // 4, channel // 8)
-        self.conv5_br = nn.Conv2d(channel // 8, 1, kernel_size=1)
-        self.fc_br = nn.Linear(512*1024, 2)
-
-    def forward(self, x):
-        tl, br = self.get_score_map(x)
-        return torch.cat((tl, br), dim=1)
-
-    def get_score_map(self, x):
-        # top-left branch
-        x_tl1 = self.conv1_tl(x)
-        x_tl2 = self.conv2_tl(x_tl1)
-        x_tl3 = self.conv3_tl(x_tl2)
-        x_tl4 = self.conv4_tl(x_tl3)
-        tl = self.conv5_tl(x_tl4)
-
-        b = tl.shape[0]
-        tl = tl.view(b, -1)
-
-        tl = self.fc_tl(tl)
-
-        # bottom-right branch
-        x_br1 = self.conv1_br(x)
-        x_br2 = self.conv2_br(x_br1)
-        x_br3 = self.conv3_br(x_br2)
-        x_br4 = self.conv4_br(x_br3)
-        br = self.conv5_br(x_br4)
-        br = br.view(b, -1)
-        br = self.fc_br(br)
-        return tl, br
+# class CornerHead(nn.Module):
+#
+#     def __init__(self, inplanes=3, channel=32):
+#         super().__init__()
+#         '''top-left corner'''
+#         self.conv1_tl = conv(inplanes, channel)
+#         self.conv2_tl = conv(channel, channel // 2)
+#         self.conv3_tl = conv(channel // 2, channel // 4)
+#         self.conv4_tl = conv(channel // 4, channel // 8)
+#         self.conv5_tl = nn.Conv2d(channel // 8, 1, kernel_size=1)
+#         self.fc_tl = nn.Linear(512 * 1024, 2)
+#
+#         '''bottom-right corner'''
+#         self.conv1_br = conv(inplanes, channel)
+#         self.conv2_br = conv(channel, channel // 2)
+#         self.conv3_br = conv(channel // 2, channel // 4)
+#         self.conv4_br = conv(channel // 4, channel // 8)
+#         self.conv5_br = nn.Conv2d(channel // 8, 1, kernel_size=1)
+#         self.fc_br = nn.Linear(512 * 1024, 2)
+#
+#     def forward(self, x):
+#         tl, br = self.get_score_map(x)
+#         return torch.cat((tl, br), dim=1)
+#
+#     def get_score_map(self, x):
+#         # top-left branch
+#         x_tl1 = self.conv1_tl(x)
+#         x_tl2 = self.conv2_tl(x_tl1)
+#         x_tl3 = self.conv3_tl(x_tl2)
+#         x_tl4 = self.conv4_tl(x_tl3)
+#         tl = self.conv5_tl(x_tl4)
+#
+#         b = tl.shape[0]
+#         tl = tl.view(b, -1)
+#
+#         tl = self.fc_tl(tl)
+#
+#         # bottom-right branch
+#         x_br1 = self.conv1_br(x)
+#         x_br2 = self.conv2_br(x_br1)
+#         x_br3 = self.conv3_br(x_br2)
+#         x_br4 = self.conv4_br(x_br3)
+#         br = self.conv5_br(x_br4)
+#         br = br.view(b, -1)
+#         br = self.fc_br(br)
+#         return tl, br
 
 
 class MatchHead(nn.Module):
 
     def __init__(self):
         super().__init__()
-        self.upsample = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)
-        self.conv = nn.Conv2d(1, 1, kernel_size=1, stride=1)
+        # self.upsample = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)
+        self.conv = nn.Conv2d(3, 2, kernel_size=1, stride=1)
 
     def forward(self, x):
-        x = self.upsample(x)
+        # x = self.upsample(x)
         x = self.conv(x)
         return x
 
 
-class MLPHead(nn.Module):
-
-    def __init__(self, input_dim, hidden_dim, output_dim, num_layers):
-        super().__init__()
-        self.num_layers = num_layers
-        h = [hidden_dim] * (num_layers - 1)
-        self.ln = nn.LayerNorm(input_dim)
-        self.layers = nn.ModuleList(nn.Linear(n, k) for n, k in zip([input_dim] + h, h + [output_dim]))
-
-    def forward(self, x):
-        x = self.ln(x)
-        for i, layer in enumerate(self.layers):
-            x = F.relu(layer(x)) if i < self.num_layers - 1 else layer(x)
-        return x
+# class MLPHead(nn.Module):
+#
+#     def __init__(self, input_dim, hidden_dim, output_dim, num_layers):
+#         super().__init__()
+#         self.num_layers = num_layers
+#         h = [hidden_dim] * (num_layers - 1)
+#         self.ln = nn.LayerNorm(input_dim)
+#         self.layers = nn.ModuleList(nn.Linear(n, k) for n, k in zip([input_dim] + h, h + [output_dim]))
+#
+#     def forward(self, x):
+#         x = self.ln(x)
+#         for i, layer in enumerate(self.layers):
+#             x = F.relu(layer(x)) if i < self.num_layers - 1 else layer(x)
+#         return x
 
 
 class PreNorm(nn.Module):
@@ -215,10 +215,10 @@ class ViT(nn.Module):
             Rearrange('b (h w) (p1 p2 c) -> b c (h p1) (w p2)', p1=patch_height, p2=patch_width, c=3, h=16)
         )
 
-        self.corner_head = CornerHead()
+        # self.corner_head = CornerHead()
 
         # self.mlp_head = MLPHead(dim, dim, 2, 3)
-        # self.match_head = MatchHead()
+        self.match_head = MatchHead()
 
     def forward(self, img, target_img=None):
         x = self.to_patch_embedding(img)
@@ -248,8 +248,8 @@ class ViT(nn.Module):
         # x = self.mlp_head(x).sigmoid()  # [x,y,h,w,score]
         # x = x.unsqueeze(1)
         # print('111: ', x.shape)
-        # x = self.match_head(x)
-        x = self.corner_head(x)
+        x = self.match_head(x)
+        # x = self.corner_head(x)
 
         return x
 
@@ -260,9 +260,9 @@ if __name__ == '__main__':
     # patch_num          16   16
     model = ViT(patch_size=(32, 64), dim=512, depth=6, heads=8, mlp_dim=512)
 
-    img = torch.randn((2, 3, 512, 1024))
+    img = torch.randn((1, 3, 512, 1024))
 
-    target_img = torch.randn((2, 3, 32, 64))
+    target_img = torch.randn((1, 3, 32, 64))
 
     out = model(img, target_img)
     print(out.shape)

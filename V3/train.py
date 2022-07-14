@@ -9,8 +9,8 @@ import torch.optim as optim
 import torch.optim.lr_scheduler as lr_scheduler
 from torch.utils.data import DataLoader
 from model_2 import ViT
-from dataset import ViTDetDataset
-from metrics import CornerMetric
+from dataset import ViTSegDataset
+from metrics import SegMetrics
 # from Loss import FocalLoss
 import logger as logger
 
@@ -72,7 +72,7 @@ class Trainer:
 
             self.optimizer.zero_grad()
             preds = self.model(img, target)
-            loss = self.criterion(preds, label)
+            loss = self.criterion(preds, label.long())
             # backward
             loss.backward()
             self.optimizer.step()
@@ -102,17 +102,20 @@ class Trainer:
             with torch.no_grad():
                 img = img.to(self.device)
                 target = target.to(self.device)
+                label = label.to(self.device)
 
                 preds = self.model(img, target)
-                preds = preds.data.cpu().numpy().tolist()
-                label = label.numpy().tolist()
 
-                _ = self.metric_cls(preds, label)
+                preds = preds.data.cpu().numpy()
+                label = label.cpu().numpy()
+                pred = np.argmax(preds, axis=1)
+
+                self.metric_cls.update(label, pred)
                 # batch_cost = time.time() - batch_start
                 total_frame += img.size()[0]
                 # batch_start = time.time()
 
-        metrics = self.metric_cls.get_metric()
+        metrics = self.metric_cls.get_results()
 
         logger.val.info(
             'eval finished. {} FPS:{:.2f}'.format(str(metrics), total_frame / (time.time() - eval_start)))
@@ -125,7 +128,7 @@ class Trainer:
 
         metrics, eval_cost = self._eval()
 
-        if metrics['acc'] >= self.metrics['acc']:
+        if metrics['MeanIoU'] >= self.metrics['MeanIoU']:
             self.metrics['loss'] = self.epoch_result['loss']
             self.metrics.update(metrics)
             self.metrics['best_model_epoch'] = self.epoch_result['epoch']
@@ -200,9 +203,9 @@ class Trainer:
 
         # self.criterion = nn.BCELoss()
         # self.criterion = nn.MSELoss()
-        self.criterion = nn.L1Loss()
-        # weight = torch.tensor([1, 90.0]).to(self.device)
-        # self.criterion = nn.CrossEntropyLoss(weight=weight, size_average=True, ignore_index=255, reduction='mean')
+        # self.criterion = nn.L1Loss()
+        weight = torch.tensor([1, 60.0]).to(self.device)
+        self.criterion = nn.CrossEntropyLoss(weight=weight, size_average=True, ignore_index=255, reduction='mean')
 
         # self.criterion = FocalLoss()
 
@@ -216,8 +219,8 @@ class Trainer:
 
         # self.lr_scheduler = lr_scheduler.StepLR(optimizer=self.optimizer, step_size=50, gamma=0.9)
 
-        self.metric_cls = CornerMetric()
-        # self.metric_cls = SegMetrics()
+        # self.metric_cls = CornerMetric()
+        self.metric_cls = SegMetrics()
 
         resume_checkpoint = self.configs.get('Train', {}).get('resume_checkpoint', '')
         if resume_checkpoint != '' and os.path.exists(resume_checkpoint):
@@ -228,8 +231,8 @@ class Trainer:
         logger.basic.info('build model finished. time_cost:{:.2f}s\n'.format(t - start))
         logger.basic.info('start load dataset')
 
-        train_dataset = ViTDetDataset(self.configs.get('dataset_dir'))
-        val_dataset = ViTDetDataset(self.configs.get('dataset_dir'), mode='val')
+        train_dataset = ViTSegDataset(self.configs.get('dataset_dir'))
+        val_dataset = ViTSegDataset(self.configs.get('dataset_dir'), mode='val')
         self.train_data_total = len(train_dataset)
         self.val_data_total = len(val_dataset)
 

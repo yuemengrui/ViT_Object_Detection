@@ -123,12 +123,8 @@ class Transformer(nn.Module):
             out_list.append(out)
 
         output = out_list[0]
-        print(output)
         for i in range(1, len(out_list)):
-            print(out_list[i])
             output += out_list[i]
-            print(output)
-            print('=========================================')
 
         return output
 

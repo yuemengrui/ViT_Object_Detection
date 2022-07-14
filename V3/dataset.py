@@ -160,9 +160,12 @@ class ViTDetDataset(Dataset):
 
 class ViTSegDataset(Dataset):
 
-    def __init__(self, dataset_dir, mode='train', target_size_range=(10, 300), threshold=0.4, **kwargs):
+    def __init__(self, dataset_dir, mode='train', target_w_range=(30, 1000), target_h_range=(20, 350),
+                 target_w_h_rate=(0.7, 20), threshold=0.6, **kwargs):
 
-        self.target_size_range = target_size_range
+        self.target_w_range = target_w_range
+        self.target_h_range = target_h_range
+        self.target_w_h_rate = target_w_h_rate
         self.threshold = threshold
 
         self.image_padding = ImagePadding()
@@ -196,16 +199,20 @@ class ViTSegDataset(Dataset):
 
     def get_crop_img(self, ori_h, ori_w, boxes):
         while True:
-            x1 = random.randint(0, ori_w - self.target_size_range[0])
-            y1 = random.randint(0, ori_h - self.target_size_range[0])
-            target_w = random.randint(self.target_size_range[0], self.target_size_range[1])
-            target_h = random.randint(self.target_size_range[0], self.target_size_range[1])
+            x1 = random.randint(0, ori_w - self.target_w_range[0])
+            y1 = random.randint(0, ori_h - self.target_h_range[0])
+            target_w = random.randint(self.target_w_range[0], self.target_w_range[1])
+            target_h = random.randint(self.target_h_range[0], self.target_h_range[1])
 
             x2 = min(ori_w, x1 + target_w)
             y2 = min(ori_h, y1 + target_h)
 
-            if crop_ok([x1, y1, x2, y2], boxes, self.threshold):
-                return [x1, y1, x2, y2]
+            w = x2 - x1
+            h = y2 - y1
+            rate = w / h
+            if self.target_w_h_rate[0] <= rate <= self.target_w_h_rate[1]:
+                if crop_ok([x1, y1, x2, y2], boxes, self.threshold):
+                    return [x1, y1, x2, y2]
 
     def __getitem__(self, idx):
         try:
@@ -249,7 +256,20 @@ class ViTSegDataset(Dataset):
 
 # if __name__ == '__main__':
 #     dataset = ViTSegDataset(dataset_dir='/Users/yuemengrui/Data/RPAUI/web_cv_data')
-#     # img, target, label, c_x, c_y = dataset[0]
+#     rate = 0
+#     for i in range(100):
+#         img, target, label, r = dataset[i]
+#         rate += r
+#     print(rate / 100)
+#     print(100 / rate)
+# cv2.imshow('im', img)
+# cv2.waitKey(0)
+#
+# cv2.imshow('target', target)
+# cv2.waitKey(0)
+#
+# cv2.imshow('label', label * 255)
+# cv2.waitKey(0)
 #     #     dataset = ViTDetDataset(dataset_dir='/Users/yuemengrui/Data/RPAUI/web_cv_data')
 #     #     train_loader = DataLoader(dataset, batch_size=2, shuffle=True, drop_last=True)
 #
