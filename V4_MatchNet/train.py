@@ -126,7 +126,7 @@ class Trainer:
 
         metrics, eval_cost = self._eval()
 
-        if metrics['MeanIoU'] >= self.metrics['MeanIoU']:
+        if metrics['acc'] >= self.metrics['acc']:
             self.metrics['loss'] = self.epoch_result['loss']
             self.metrics.update(metrics)
             self.metrics['best_model_epoch'] = self.epoch_result['epoch']
