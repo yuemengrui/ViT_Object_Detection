@@ -250,7 +250,7 @@ class MLPHead(nn.Module):
 
 
 class MatchNet(nn.Module):
-    def __init__(self):
+    def __init__(self, **kwargs):
         super().__init__()
 
         self.backbone1 = resnet18()
@@ -258,7 +258,7 @@ class MatchNet(nn.Module):
 
         self.conv1 = conv1x1(512, 512)
 
-        self.mlp_head = MLPHead(512 * 2, 512, 1, 3)
+        self.mlp_head = MLPHead(512 * 2, 512, 2, 3)
 
     def forward(self, img, target):
         img = self.backbone1(img)
@@ -274,7 +274,7 @@ class MatchNet(nn.Module):
 
         x = self.mlp_head(x)
 
-        return x.sigmoid()
+        return x
 
 
 if __name__ == '__main__':
