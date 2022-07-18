@@ -117,7 +117,8 @@ class MatchNet(nn.Module):
 
         self.transformer = Transformer(dim, depth, heads, dim_head, mlp_dim, dropout)
 
-        self.mlp_head = MLPHead(dim, dim, 1, 3)
+        self.mlp_head = MLPHead(dim, dim, 2, 3)
+        # self.soft_max = nn.Softmax(dim=1)
 
     def forward(self, img, target_img):
         x = self.to_image_embedding(img)
@@ -142,19 +143,23 @@ class MatchNet(nn.Module):
 
         x = self.mlp_head(x)
 
-        return x.sigmoid()
+        # x = self.soft_max(x)
+
+        return x
 
 
 if __name__ == '__main__':
+    import time
     model = MatchNet(dim=512, depth=6, heads=8, mlp_dim=512)
 
-    img = torch.randn((2, 3, 32, 64))
+    img = torch.randn((1, 3, 32, 64))
 
-    target_img = torch.randn((2, 3, 32, 64))
-
+    target_img = torch.randn((1, 3, 32, 64))
+    start = time.time()
     out = model(img, target_img)
+    print(time.time() - start)
     print(out.shape)
     print(out)
-    pred = out.data.cpu().numpy().tolist()
-    print(type(pred))
-    print(pred)
+    # pred = out.data.cpu().numpy().tolist()
+    # print(type(pred))
+    # print(pred)

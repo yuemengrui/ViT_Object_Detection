@@ -175,7 +175,7 @@ class MatchDataset(Dataset):
 
                 target = origin_img[target_y1:target_y2, target_x1:target_x2]
 
-                label = torch.from_numpy(np.array([1]))
+                label = torch.from_numpy(np.array(1))
             else:
                 while 1:
                     new_idx = random.randint(0, len(self.data_list) - 1)
@@ -183,7 +183,7 @@ class MatchDataset(Dataset):
                         break
 
                 _, _, target = self._get_img(new_idx)
-                label = torch.from_numpy(np.array([0]))
+                label = torch.from_numpy(np.array(0))
 
             for p in self.pre_processing:
                 small_img = p(small_img)

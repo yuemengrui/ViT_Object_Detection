@@ -198,11 +198,11 @@ class Trainer:
         start = time.time()
         self.model = MatchNet(dim=512, depth=6, heads=8, mlp_dim=512)
 
-        self.criterion = nn.BCELoss()
+        # self.criterion = nn.BCELoss()
         # self.criterion = nn.MSELoss()
         # self.criterion = nn.L1Loss()
 
-        # self.criterion = nn.CrossEntropyLoss()
+        self.criterion = nn.CrossEntropyLoss()
 
         # self.criterion = FocalLoss()
 

@@ -22,8 +22,6 @@ class ClassifyMetric(object):
 
             label = labels[i][0]
 
-            logger.val.info('label: {}'.format(label), label == 1)
-
             if label == 1:
                 if pred >= 0.9:
                     correct_num += 1
