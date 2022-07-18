@@ -17,17 +17,17 @@ class ClassifyMetric(object):
         logger.val.info('labels: {}'.format(str(labels)))
         for i in range(len(preds)):
 
-            pred = preds[i][0]
+            pred = preds[i]
             logger.val.info('pred: {} '.format(pred))
+            index = pred.index(max(pred))
+            logger.val.info('index: {} '.format(index))
 
-            label = labels[i][0]
+            label = labels[i]
+            logger.val.info('label: {} '.format(label))
 
-            if label == 1:
-                if pred >= 0.9:
-                    correct_num += 1
-            else:
-                if pred < 0.5:
-                    correct_num += 1
+            if index == label:
+                logger.val.info('correct')
+                correct_num += 1
 
             all_num += 1
 
