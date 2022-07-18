@@ -25,7 +25,7 @@ class ClassifyMetric(object):
             logger.val.info('label: {}'.format(label), label == 1)
 
             if label == 1:
-                if pred > 0.7:
+                if pred >= 0.9:
                     correct_num += 1
             else:
                 if pred < 0.5:

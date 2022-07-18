@@ -110,6 +110,11 @@ class MatchDataset(Dataset):
 
     def __init__(self, dataset_dir, mode='train', **kwargs):
 
+        self.mode = mode
+        if mode == 'train':
+            self.threshold = 0.7
+        else:
+            self.threshold = 0.2
         self.image_padding = ImagePadding()
         self.image_resize = ImageResize(size=(64, 32))
 
@@ -119,9 +124,9 @@ class MatchDataset(Dataset):
                                              transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
                                              ])
 
-        self.data_list = self._load_data(dataset_dir, mode)
+        self.data_list = self._load_data(dataset_dir)
 
-    def _load_data(self, dataset_dir, mode='train'):
+    def _load_data(self, dataset_dir):
         img_dir = os.path.join(dataset_dir, 'images')
         boxes_dir = os.path.join(dataset_dir, 'box_labels')
 
@@ -135,9 +140,10 @@ class MatchDataset(Dataset):
 
             data_list.append({'img_path': img_path, 'box_path': box_path})
 
-        if mode == 'val':
+        if self.mode == 'val':
             random.shuffle(data_list)
-            return data_list[:50]
+            return data_list[:100]
+
         return data_list
 
     def _get_img(self, i):
@@ -161,7 +167,7 @@ class MatchDataset(Dataset):
             origin_img, box, small_img = self._get_img(idx)
             ori_h, ori_w = origin_img.shape[:2]
 
-            if random.random() > 0.4:
+            if random.random() > self.threshold:
                 target_x1 = max(box[0] + random.randint(-20, 6), 0)
                 target_y1 = max(box[1] + random.randint(-10, 0), 0)
                 target_x2 = min(box[2] + random.randint(-6, 20), ori_w)
@@ -172,7 +178,7 @@ class MatchDataset(Dataset):
                 label = torch.from_numpy(np.array([1]))
             else:
                 while 1:
-                    new_idx = random.randint(0, len(self.data_list))
+                    new_idx = random.randint(0, len(self.data_list) - 1)
                     if new_idx != idx:
                         break
 
