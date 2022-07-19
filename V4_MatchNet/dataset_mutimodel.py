@@ -7,8 +7,39 @@ import cv2
 import json
 import torch
 import random
+import requests
 from torchvision import transforms
 from torch.utils.data import DataLoader
+
+
+class StrConverter(object):
+    def __init__(self):
+        self.alphabet = " "
+        with open("./ch_all.txt", "rb") as fin:
+            lines = fin.readlines()
+            for line in lines:
+                line = line.decode('utf-8').strip("\n").strip("\r\n")
+                self.alphabet += line
+
+    def text_encode(self, text, length=32):
+        text_encode = []
+        if text == '':
+            text_encode.append(self.alphabet.index(" "))
+        else:
+            for t in text:
+                if t not in self.alphabet:
+                    text_encode.append(self.alphabet.index(" "))
+                else:
+                    text_encode.append(self.alphabet.index(t))
+
+        if len(text_encode) > length:
+            text_encode = text_encode[:length]
+        else:
+            n = length - len(text_encode)
+            for _ in range(n):
+                text_encode.append(self.alphabet.index(" "))
+
+        return np.array(text_encode)
 
 
 class ImageColor(object):
@@ -112,9 +143,12 @@ class MatchDataset(Dataset):
 
         self.mode = mode
         if mode == 'train':
-            self.threshold = 0.8
+            self.threshold = 0.5
         else:
-            self.threshold = 0.2
+            self.threshold = 0.5
+
+        self.converter = StrConverter()
+
         self.image_padding = ImagePadding()
         self.image_resize = ImageResize(size=(64, 32))
 
@@ -161,10 +195,36 @@ class MatchDataset(Dataset):
 
         return origin_img, box, img
 
+    def get_ocr(self, img_data):
+        url = 'http://134.175.246.119:9350/ai/ocr/byte'
+
+        req_data = {
+            'file': img_data
+        }
+
+        try:
+            resp = requests.post(url=url, files=req_data)
+            return resp.json()['data']['results']
+        except Exception as e:
+            print(str(e))
+            return ' '
+
+    def get_ocr_text_encode(self, img):
+        img_encode = cv2.imencode('.jpg', img)[1]
+
+        data_encode = np.array(img_encode)
+
+        text = self.get_ocr(data_encode)
+
+        text_encode = self.converter.text_encode(text)
+
+        return text_encode
+
     def __getitem__(self, idx):
         try:
 
             origin_img, box, small_img = self._get_img(idx)
+
             ori_h, ori_w = origin_img.shape[:2]
 
             if random.random() > self.threshold:
@@ -185,6 +245,9 @@ class MatchDataset(Dataset):
                 _, _, target = self._get_img(new_idx)
                 label = torch.from_numpy(np.array(0))
 
+            small_img_text_encode = torch.from_numpy(self.get_ocr_text_encode(small_img))
+            target_text_encode = torch.from_numpy(self.get_ocr_text_encode(target))
+
             for p in self.pre_processing:
                 small_img = p(small_img)
                 target = p(target)
@@ -197,7 +260,7 @@ class MatchDataset(Dataset):
             target = self.image_resize(target)
             target = self.transform(target)
 
-            return small_img, target, label
+            return small_img, small_img_text_encode, target, target_text_encode, label
 
         except Exception as e:
             print(e)
@@ -211,23 +274,29 @@ if __name__ == '__main__':
     import torch.nn as nn
 
     dataset = MatchDataset(dataset_dir='/Users/yuemengrui/Data/RPAUI/train_data')
-    train_loader = DataLoader(dataset, batch_size=4, shuffle=True, drop_last=True)
-
-    criterion = nn.BCELoss()
-    pred = torch.randn((4, 1)).sigmoid()
-    print(pred)
-
-    for img, target, label in train_loader:
+    train_loader = DataLoader(dataset, batch_size=2, shuffle=True, drop_last=True)
+    #
+    # criterion = nn.BCELoss()
+    # pred = torch.randn((4, 1)).sigmoid()
+    # print(pred)
+    #
+    for img, img_text_encode, target, target_text_encode, label in train_loader:
+        print(img.shape)
+        print(img_text_encode.shape)
+        print(target.shape)
+        print(target_text_encode.shape)
         print(label.shape)
-        print(label)
-        label = label.numpy().tolist()
-        print(label)
-
-        # loss = criterion(pred, label.float())
-        # print(loss)
-
         break
-    # for i in range(10):
+    #     print(label.shape)
+    #     print(label)
+    #     label = label.numpy().tolist()
+    #     print(label)
+    #
+    #     # loss = criterion(pred, label.float())
+    #     # print(loss)
+    #
+    #     break
+    # # for i in range(10):
     #     img, target, label = dataset[i]
     # print(img.shape)
     # print(target.shape)

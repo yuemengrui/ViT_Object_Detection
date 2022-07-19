@@ -71,7 +71,7 @@ class Trainer:
 
             self.optimizer.zero_grad()
             preds = self.model(img, target)
-            loss = self.criterion(preds, label.float())
+            loss = self.criterion(preds, label.long())
             # backward
             loss.backward()
             self.optimizer.step()
@@ -251,14 +251,14 @@ class Trainer:
 
 if __name__ == '__main__':
     configs = {
-        'save_dir': './checkpoints_4',
+        'save_dir': './checkpoints_transformer',
         'dataset_dir': '/data/guorui/ViT_DET/train_data',
         'Epochs': 10000,
         'batch_size': 64,
         'lr': 2e-4,
-        'weight_decay': 1e-4,
+        'weight_decay': 1e-6,
         'Train': {
-            'resume_checkpoint': ''
+            'resume_checkpoint': '/data/guorui/ViT_DET/ViT_Object_Detection/V4_MatchNet/checkpoints_4/model_best.pth'
         }
     }
     trainer = Trainer(configs)
