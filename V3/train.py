@@ -8,7 +8,7 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.optim.lr_scheduler as lr_scheduler
 from torch.utils.data import DataLoader
-from model_2 import ViT
+from model_selfattention import ViT
 from dataset import ViTSegDataset
 from metrics import SegMetrics
 # from Loss import FocalLoss
@@ -254,12 +254,12 @@ class Trainer:
 
 if __name__ == '__main__':
     configs = {
-        'save_dir': './checkpoints_3',
+        'save_dir': './checkpoints_self',
         'dataset_dir': '/data/guorui/ViT_DET/train_data',
         'Epochs': 10000,
         'batch_size': 64,
         'lr': 2e-4,
-        'weight_decay': 1e-4,
+        'weight_decay': 1e-6,
         'Train': {
             'resume_checkpoint': ''
         }
