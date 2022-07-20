@@ -28,19 +28,13 @@ def iou(box1, box2):
     return iou
 
 
-def crop_ok(target_box, boxes, threshold=0.5):
-    for box in boxes:
-        if box[0] > target_box[2]:
-            continue
+def crop_ok(target_box, binary, threshold=0.6):
+    target_bin = binary[target_box[1]:target_box[3], target_box[0]:target_box[2]]
 
-        if box[2] < target_box[0]:
-            continue
+    t_h, t_w = target_bin.shape[:2]
 
-        if box[1] > target_box[3]:
-            break
-
-        if iou(target_box, box) > threshold:
-            return True
+    if np.sum(target_bin == 1) / (t_h * t_w) > threshold:
+        return True
 
     return False
 
@@ -101,7 +95,7 @@ class ViTSegDataset(Dataset):
 
     def _load_data(self, dataset_dir, mode='train'):
         img_dir = os.path.join(dataset_dir, 'images')
-        boxes_dir = os.path.join(dataset_dir, 'box_labels')
+        labels_dir = os.path.join(dataset_dir, 'labels')
 
         file_list = os.listdir(img_dir)
 
@@ -109,16 +103,16 @@ class ViTSegDataset(Dataset):
         for fil in file_list:
             file_name = fil.split('.')[0]
             img_path = os.path.join(img_dir, fil)
-            box_path = os.path.join(boxes_dir, file_name + '.json')
+            label_path = os.path.join(labels_dir, file_name + '.png')
 
-            data_list.append({'img_path': img_path, 'box_path': box_path})
+            data_list.append({'img_path': img_path, 'label_path': label_path})
 
         if mode == 'val':
             random.shuffle(data_list)
             return data_list[:50]
         return data_list
 
-    def get_crop_img(self, ori_h, ori_w, boxes):
+    def get_crop_img(self, ori_h, ori_w, binary):
         while True:
             x1 = random.randint(0, ori_w - self.target_w_range[0])
             y1 = random.randint(0, ori_h - self.target_h_range[0])
@@ -132,7 +126,7 @@ class ViTSegDataset(Dataset):
             h = y2 - y1
             rate = w / h
             if self.target_w_h_rate[0] <= rate <= self.target_w_h_rate[1]:
-                if crop_ok([x1, y1, x2, y2], boxes, self.threshold):
+                if crop_ok([x1, y1, x2, y2], binary, self.threshold):
                     return [x1, y1, x2, y2]
 
     def __getitem__(self, idx):
@@ -140,14 +134,13 @@ class ViTSegDataset(Dataset):
             data = self.data_list[idx]
 
             img = cv2.imread(data['img_path'])
-            with open(data['box_path'], 'r', encoding='utf8') as f:
-                boxes = json.load(f)
+            binary = cv2.imread(data['label_path'], -1)
 
             ori_h, ori_w = img.shape[:2]
 
             label = np.uint8(np.zeros((ori_h, ori_w)))
 
-            target_box = self.get_crop_img(ori_h, ori_w, boxes)
+            target_box = self.get_crop_img(ori_h, ori_w, binary)
 
             target = img[target_box[1]:target_box[3], target_box[0]:target_box[2]]
 
@@ -175,8 +168,15 @@ class ViTSegDataset(Dataset):
     def __len__(self):
         return len(self.data_list)
 
-# if __name__ == '__main__':
-#     dataset = ViTSegDataset(dataset_dir='/Users/yuemengrui/Data/RPAUI/web_cv_data')
+
+if __name__ == '__main__':
+    dataset = ViTSegDataset(dataset_dir='/Users/yuemengrui/Data/RPAUI/train_data')
+    for i in range(20):
+        img, box = dataset[i]
+
+        cv2.rectangle(img, (box[0], box[1]), (box[2], box[3]), (0, 0, 255), 2)
+        cv2.imshow('xx', img)
+        cv2.waitKey(0)
 #     rate = 0
 #     start = time.time()
 #     for i in range(100):
