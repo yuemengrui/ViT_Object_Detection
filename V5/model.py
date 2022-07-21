@@ -257,14 +257,16 @@ class MatchHead(nn.Module):
     def __init__(self):
         super().__init__()
         self.conv = nn.Conv2d(512, 2, kernel_size=1, stride=1)
+        self.conv1 = nn.Conv2d(2, 2, kernel_size=1, stride=1)
 
     def forward(self, x):
         x = self.conv(x)
-        x = F.interpolate(x, scale_factor=32, mode='bilinear', align_corners=True)
-        # x = F.interpolate(x, scale_factor=2, mode='bilinear', align_corners=True)
-        # x = F.interpolate(x, scale_factor=2, mode='bilinear', align_corners=True)
-        # x = F.interpolate(x, scale_factor=2, mode='bilinear', align_corners=True)
-        # x = F.interpolate(x, scale_factor=2, mode='bilinear', align_corners=True)
+        x = F.interpolate(x, scale_factor=2, mode='bilinear', align_corners=True)
+        x = F.interpolate(x, scale_factor=2, mode='bilinear', align_corners=True)
+        x = F.interpolate(x, scale_factor=2, mode='bilinear', align_corners=True)
+        x = F.interpolate(x, scale_factor=2, mode='bilinear', align_corners=True)
+        x = F.interpolate(x, scale_factor=2, mode='bilinear', align_corners=True)
+        x = self.conv1(x)
         return x
 
 
