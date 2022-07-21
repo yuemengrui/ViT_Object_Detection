@@ -39,7 +39,7 @@ class Trainer:
 
         self._initialize()
 
-        self.metrics = {'MeanIoU': 0, 'acc': 0, 'loss': float('inf'), 'best_model_epoch': 0}
+        self.metrics = {'MeanIoU': 0, 'loss': float('inf'), 'best_model_epoch': 0}
 
     def train(self):
         """
@@ -203,7 +203,7 @@ class Trainer:
         # self.criterion = nn.BCELoss()
         # self.criterion = nn.MSELoss()
         # self.criterion = nn.L1Loss()
-        weight = torch.tensor([1, 60.0]).to(self.device)
+        weight = torch.tensor([1, 90.0]).to(self.device)
         self.criterion = nn.CrossEntropyLoss(weight=weight, size_average=True, ignore_index=255, reduction='mean')
 
         # self.criterion = FocalLoss()
@@ -230,8 +230,12 @@ class Trainer:
         logger.basic.info('build model finished. time_cost:{:.2f}s\n'.format(t - start))
         logger.basic.info('start load dataset')
 
-        train_dataset = ViTSegDataset(self.configs.get('dataset_dir'))
-        val_dataset = ViTSegDataset(self.configs.get('dataset_dir'), mode='val')
+        # train_dataset = ViTSegDataset(self.configs.get('dataset_dir'))
+        train_dataset = ViTSegDataset(self.configs.get('dataset_dir'), target_w_range=(116, 140),
+                                      target_h_range=(58, 70), target_w_h_rate=(0.8, 10))
+        # val_dataset = ViTSegDataset(self.configs.get('dataset_dir'), mode='val')
+        val_dataset = ViTSegDataset(self.configs.get('dataset_dir'), mode='val', target_w_range=(116, 140),
+                                    target_h_range=(58, 70), target_w_h_rate=(0.8, 10))
         self.train_data_total = len(train_dataset)
         self.val_data_total = len(val_dataset)
 
@@ -253,12 +257,12 @@ class Trainer:
 
 if __name__ == '__main__':
     configs = {
-        'save_dir': './checkpoints',
+        'save_dir': './checkpoints_cropimg',
         'dataset_dir': '/data/guorui/ViT_DET/train_data',
         'Epochs': 10000,
-        'batch_size': 64,
+        'batch_size': 20,
         'lr': 2e-4,
-        'weight_decay': 1e-6,
+        'weight_decay': 1e-5,
         'Train': {
             'resume_checkpoint': ''
         }

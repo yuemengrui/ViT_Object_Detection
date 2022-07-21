@@ -56,20 +56,20 @@ class SegMetrics(object):
         return cls_iou
 
     def get_results(self):
-        acc = self.Pixel_Accuracy()
+        # acc = self.Pixel_Accuracy()
 
-        acc_cls = self.Pixel_Accuracy_Class()
+        # acc_cls = self.Pixel_Accuracy_Class()
 
         mean_iou = self.Mean_Intersection_over_Union()
 
-        fwavacc = self.Frequency_Weighted_Intersection_over_Union()
+        # fwavacc = self.Frequency_Weighted_Intersection_over_Union()
 
         cls_iou = self.Class_IOU()
 
         return {
-            "OverallAcc": acc,
-            "MeanAcc": acc_cls,
-            "FreqWAcc": fwavacc,
+            # "OverallAcc": acc,
+            # "MeanAcc": acc_cls,
+            # "FreqWAcc": fwavacc,
             "MeanIoU": mean_iou,
             "ClassIoU": cls_iou,
         }
