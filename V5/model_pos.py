@@ -396,7 +396,7 @@ class ViT(nn.Module):
 
         self.match_head = MatchHead()
 
-    def forward(self, img, target_img, position=None):
+    def forward(self, img, target_img, position):
         # x = self.to_image_embedding(img)  # [N, 512, 512]
         x = self.to_patch_embedding(img).transpose(-1, -2)
         x = x @ self.patch_weight  # [N, 256, 512]

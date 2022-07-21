@@ -57,20 +57,21 @@ class Trainer:
         train_loss = 0.0
 
         batch_start = time.time()
-        for i, (img, target, label) in enumerate(self.train_loader):
+        for i, (img, target, label, position) in enumerate(self.train_loader):
             self.global_step += 1
             lr = self.optimizer.param_groups[0]['lr']
 
             img = img.to(self.device)
             target = target.to(self.device)
             label = label.to(self.device)
+            position = position.to(self.device)
 
             reader_cost = time.time() - batch_start
 
             cur_batch_size = img.size()[0]
 
             self.optimizer.zero_grad()
-            preds = self.model(img, target)
+            preds = self.model(img, target, position)
             loss = self.criterion(preds, label.long())
             # backward
             loss.backward()
@@ -97,13 +98,14 @@ class Trainer:
         total_frame = 0.0
         eval_start = time.time()
         # batch_start = time.time()
-        for img, target, label in self.val_loader:
+        for img, target, label, position in self.val_loader:
             with torch.no_grad():
                 img = img.to(self.device)
                 target = target.to(self.device)
                 label = label.to(self.device)
+                position = position.to(self.device)
 
-                preds = self.model(img, target)
+                preds = self.model(img, target, position)
 
                 preds = preds.data.cpu().numpy()
                 label = label.cpu().numpy()
