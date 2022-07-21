@@ -186,7 +186,7 @@ class ViTSegDataset(Dataset):
             label, _ = self.image_resize(label)
             label = torch.from_numpy(label)
 
-            return img, target, label, torch.from_numpy(np.array([c_x, c_y]))
+            return img, target, label, torch.from_numpy(np.array([c_x, c_y], dtype=np.float32))
 
         except Exception as e:
             print(e)
