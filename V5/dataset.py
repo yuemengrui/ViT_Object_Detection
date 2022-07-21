@@ -93,7 +93,7 @@ class ViTSegDataset(Dataset):
 
         if mode == 'val':
             random.shuffle(data_list)
-            return data_list[:50]
+            return data_list[:100]
         return data_list
 
     def get_crop_img(self, ori_h, ori_w, binary):
