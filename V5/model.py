@@ -222,7 +222,6 @@ class ResNet(nn.Module):
         x = self.layer2(x)
         x = self.layer3(x)
         x = self.layer4(x)
-        print('resnet: ', x.shape)
 
         # x = self.last_conv(x)
         # print('resnet: ', x.shape)
