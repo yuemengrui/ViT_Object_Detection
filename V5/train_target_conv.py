@@ -56,7 +56,7 @@ class Trainer:
         epoch_start = time.time()
         train_loss = 0.0
 
-        batch_start = time.time()
+        # batch_start = time.time()
         for i, (img, target, label) in enumerate(self.train_loader):
             self.global_step += 1
             lr = self.optimizer.param_groups[0]['lr']
@@ -65,9 +65,9 @@ class Trainer:
             target = target.to(self.device)
             label = label.to(self.device)
 
-            reader_cost = time.time() - batch_start
+            # reader_cost = time.time() - batch_start
 
-            cur_batch_size = img.size()[0]
+            # cur_batch_size = img.size()[0]
 
             self.optimizer.zero_grad()
             preds = self.model(img, target)
@@ -78,19 +78,21 @@ class Trainer:
 
             train_loss += loss.item()
 
-            batch_cost = time.time() - batch_start
-            logger.train.info(
-                '[epoch:{}/{}] [iter:{}/{}] global_step:{}, loss:{}, lr:{:.9f}, reader_cost:{:.2f}s, batch_cost:{:.2f}s, speed:{:.1f}/s'.format(
-                    epoch, self.epochs, i + 1, self.train_loader_len, self.global_step, loss.item(), lr, reader_cost,
-                    batch_cost, cur_batch_size / batch_cost))
+            # batch_cost = time.time() - batch_start
+            if i % 50 == 0:
+                logger.train.info(
+                    '[epoch:{}/{}] [iter:{}/{}] global_step:{}, loss:{}, lr:{:.9f}'.format(epoch, self.epochs, i + 1,
+                                                                                           self.train_loader_len,
+                                                                                           self.global_step,
+                                                                                           loss.item(), lr))
 
-            batch_start = time.time()
+            # batch_start = time.time()
 
         return {'loss': train_loss / self.train_loader_len, 'epoch_cost': time.time() - epoch_start,
                 'epoch': epoch}
 
     def _eval(self):
-        logger.val.info('start eval, eval data total:{}'.format(self.val_data_total))
+        # logger.val.info('start eval, eval data total:{}'.format(self.val_data_total))
         self.model.eval()
         self.metric_cls.reset()
         # torch.cuda.empty_cache()  # speed up evaluating after training finished
