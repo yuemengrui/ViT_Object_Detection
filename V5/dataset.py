@@ -60,8 +60,8 @@ class ImageResize(object):
 
 class ViTSegDataset(Dataset):
 
-    def __init__(self, dataset_dir, mode='train', target_w_range=(32, 512), target_h_range=(20, 256),
-                 target_w_h_rate=(0.8, 18), threshold=0.6, **kwargs):
+    def __init__(self, dataset_dir, mode='train', target_w_range=(32, 960), target_h_range=(20, 224),
+                 target_w_h_rate=(0.7, 20), threshold=0.7, **kwargs):
 
         self.target_w_range = target_w_range
         self.target_h_range = target_h_range

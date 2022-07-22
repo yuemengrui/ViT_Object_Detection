@@ -93,8 +93,8 @@ class ImageResize(object):
 
 class ViTSegDataset(Dataset):
 
-    def __init__(self, dataset_dir, mode='train', target_w_range=(32, 512), target_h_range=(20, 256),
-                 target_w_h_rate=(0.8, 20), threshold=0.6, **kwargs):
+    def __init__(self, dataset_dir, mode='train', target_w_range=(32, 960), target_h_range=(20, 224),
+                 target_w_h_rate=(0.7, 20), threshold=0.7, **kwargs):
 
         self.target_w_range = target_w_range
         self.target_h_range = target_h_range
@@ -223,7 +223,7 @@ if __name__ == '__main__':
 #         img, target, label = dataset[i]
 #     print(time.time()-start)
 #     #     dataset = ViTDetDataset(dataset_dir='/Users/yuemengrui/Data/RPAUI/web_cv_data')
-    train_loader = DataLoader(dataset, batch_size=2, shuffle=True, drop_last=True)
+    train_loader = DataLoader(dataset, batch_size=64, shuffle=True, drop_last=True)
 #
     for img, target, label, pos in train_loader:
         print(img.shape)
