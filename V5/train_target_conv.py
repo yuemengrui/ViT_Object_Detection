@@ -264,7 +264,7 @@ if __name__ == '__main__':
         'lr': 1e-4,
         'weight_decay': 1e-6,
         'Train': {
-            'resume_checkpoint': ''
+            'resume_checkpoint': '/data/guorui/ViT_DET/ViT_Object_Detection/V5/checkpoints_target_conv/model_best.pth'
         }
     }
     trainer = Trainer(configs)
