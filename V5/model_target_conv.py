@@ -5,7 +5,6 @@ from torch import nn
 import torch.nn.functional as F
 from einops import rearrange, repeat
 from einops.layers.torch import Rearrange
-from copy import deepcopy
 
 
 def pair(t):
@@ -139,15 +138,15 @@ class ViT(nn.Module):
         # self.dropout = nn.Dropout(emb_dropout)
 
         self.to_target_feature = nn.Sequential(
-            Rearrange('b c h w -> b c (h w )'),
-            nn.Linear(481 * 961, dim)
+            Rearrange('b c (h p1) (w p2) -> b (h w) (p1 p2 c)', p1=13, p2=31),
+            nn.Linear(403, dim)
         )
 
         self.transformer = Transformer(dim, depth, heads, dim_head, mlp_dim, dropout)
 
         self.pool = pool
 
-        self.l = nn.Linear(258, 256)
+        self.l = nn.Linear(1404, 256)
 
         self.to_up = nn.Sequential(
             nn.Linear(dim, patch_dim),
@@ -161,10 +160,10 @@ class ViT(nn.Module):
         self.match_head = MatchHead()
 
     def forward(self, img, target_img):
-        x = self.to_patch_embedding(deepcopy(img)).transpose(-1, -2)
+        x = self.to_patch_embedding(img).transpose(-1, -2)
         x = x @ self.patch_weight  # [N, 256, 512]
 
-        target = self.to_target_embedding(deepcopy(target_img))  # [N, 1, 512]
+        target = self.to_target_embedding(target_img)  # [N, 1, 512]
 
         b, n, _ = x.shape
         # cls_tokens = repeat(self.cls_token, '1 1 d -> b 1 d', b=b)
@@ -180,11 +179,11 @@ class ViT(nn.Module):
 
         feature = F.conv2d(img, target_img)
 
-        feature = self.to_target_feature(feature)
+        feature = self.to_target_feature(feature)  # [N, 1147, 512]
 
-        x = torch.cat((feature, x), dim=1)  # [N, 258, 512]
+        x = torch.cat((feature, x), dim=1)  # [N, 1404, 512]
 
-        x = self.transformer(x)  # [N, 258, 512]
+        x = self.transformer(x)  # [N, 1404, 512]
 
         x = self.l(x.permute(0, 2, 1)).permute(0, 2, 1)  # [N, 256, 512]
 
