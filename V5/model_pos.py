@@ -256,17 +256,17 @@ class MatchHead(nn.Module):
 
     def __init__(self):
         super().__init__()
-        self.conv = nn.Conv2d(512, 2, kernel_size=1, stride=1)
-        self.conv1 = nn.Conv2d(2, 2, kernel_size=1, stride=1)
+        self.conv = nn.Conv2d(3, 2, kernel_size=1, stride=1)
+        # self.conv1 = nn.Conv2d(2, 2, kernel_size=1, stride=1)
 
     def forward(self, x):
         x = self.conv(x)
-        x = F.interpolate(x, scale_factor=2, mode='bilinear', align_corners=True)
-        x = F.interpolate(x, scale_factor=2, mode='bilinear', align_corners=True)
-        x = F.interpolate(x, scale_factor=2, mode='bilinear', align_corners=True)
-        x = F.interpolate(x, scale_factor=2, mode='bilinear', align_corners=True)
-        x = F.interpolate(x, scale_factor=2, mode='bilinear', align_corners=True)
-        x = self.conv1(x)
+        # x = F.interpolate(x, scale_factor=2, mode='bilinear', align_corners=True)
+        # x = F.interpolate(x, scale_factor=2, mode='bilinear', align_corners=True)
+        # x = F.interpolate(x, scale_factor=2, mode='bilinear', align_corners=True)
+        # x = F.interpolate(x, scale_factor=2, mode='bilinear', align_corners=True)
+        # x = F.interpolate(x, scale_factor=2, mode='bilinear', align_corners=True)
+        # x = self.conv1(x)
         return x
 
 
@@ -377,7 +377,7 @@ class ViT(nn.Module):
             nn.Linear(patch_dim, dim)
         )
 
-        self.pos_l = nn.Linear(514, 512)
+        self.pos_l = nn.Linear(2, 512)
 
         self.pos_embedding = nn.Parameter(torch.randn(1, num_patches + 1, dim))
         # self.pos_embedding = nn.Parameter(torch.randn(1, num_patches, dim))
@@ -390,10 +390,16 @@ class ViT(nn.Module):
 
         self.pool = pool
 
-        self.l = nn.Linear(257, 512)
+        # self.l = nn.Linear(257, 512)
+        #
+        # self.to_cnn = nn.Sequential(
+        #     Rearrange('b (h w) c -> b c h w', h=16, w=32)
+        # )
+        self.l = nn.Linear(257, 256)
 
-        self.to_cnn = nn.Sequential(
-            Rearrange('b (h w) c -> b c h w', h=16, w=32)
+        self.to_up = nn.Sequential(
+            nn.Linear(dim, patch_dim),
+            Rearrange('b (h w) (p1 p2 c) -> b c (h p1) (w p2)', p1=patch_height, p2=patch_width, c=3, h=16)
         )
 
         self.match_head = MatchHead()
@@ -405,29 +411,26 @@ class ViT(nn.Module):
 
         target = self.to_target_embedding(target_img)  # [N, 1, 512]
 
-        position = position.unsqueeze(dim=1)  # [N,1, 2]
+        position = self.pos_l(position)  # [N, 512]
 
-        target = torch.cat((target, position), dim=2)  # [N, 1, 514]
+        position = position.unsqueeze(dim=1)  # [N, 1, 512]
 
-        target = self.pos_l(target)
+        target += position
 
         b, n, _ = x.shape
-        # cls_tokens = repeat(self.cls_token, '1 1 d -> b 1 d', b=b)
-        #
-        x = torch.cat((target, x), dim=1)  # [N, 257, 514]
 
-        #
-        # target = torch.cat((cls_tokens, target), dim=1)
+        x = torch.cat((target, x), dim=1)  # [N, 257, 512]
 
-        x += self.pos_embedding[:, :(n + 1)]  # [N, 257, 514]
+        x += self.pos_embedding[:, :(n + 1)]  # [N, 257, 512]
 
         x = self.dropout(x)
 
         x = self.transformer(x)  # [N, 257, 512]
 
-        x = self.l(x.permute(0, 2, 1))  # [N, 256, 512]
+        x = self.l(x.permute(0, 2, 1)).permute(0, 2, 1)  # [N, 256, 512]
 
-        x = self.to_cnn(x)  # [N, 512, 16, 32]
+        # x = self.to_cnn(x)  # [N, 512, 16, 32]
+        x = self.to_up(x)
 
         x = self.match_head(x)
 

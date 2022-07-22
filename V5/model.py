@@ -168,7 +168,7 @@ class ResNet(nn.Module):
         self.layer4 = self._make_layer(block, 512, layers[3], stride=2,
                                        dilate=replace_stride_with_dilation[2])
 
-        self.last_conv = nn.Conv2d(2048, 512, 1)
+        self.last_conv = nn.Conv2d(2048, 1024, 1)
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
                 nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
@@ -223,8 +223,8 @@ class ResNet(nn.Module):
         x = self.layer3(x)
         x = self.layer4(x)
 
-        # x = self.last_conv(x)
-        # print('resnet: ', x.shape)
+        x = self.last_conv(x)
+        print('resnet: ', x.shape)
         return x
 
     def forward(self, x: Tensor) -> Tensor:
@@ -256,17 +256,11 @@ class MatchHead(nn.Module):
 
     def __init__(self):
         super().__init__()
-        self.conv = nn.Conv2d(512, 2, kernel_size=1, stride=1)
-        self.conv1 = nn.Conv2d(2, 2, kernel_size=1, stride=1)
+        self.conv = nn.Conv2d(3, 2, kernel_size=1, stride=1)
 
     def forward(self, x):
         x = self.conv(x)
-        x = F.interpolate(x, scale_factor=2, mode='bilinear', align_corners=True)
-        x = F.interpolate(x, scale_factor=2, mode='bilinear', align_corners=True)
-        x = F.interpolate(x, scale_factor=2, mode='bilinear', align_corners=True)
-        x = F.interpolate(x, scale_factor=2, mode='bilinear', align_corners=True)
-        x = F.interpolate(x, scale_factor=2, mode='bilinear', align_corners=True)
-        x = self.conv1(x)
+
         return x
 
 
@@ -347,7 +341,7 @@ class Transformer(nn.Module):
 
 class ViT(nn.Module):
 
-    def __init__(self, image_size=(512, 1024), patch_size=(32, 64), dim=512, depth=6, heads=8, mlp_dim=512, channels=3,
+    def __init__(self, image_size=(512, 1024), patch_size=(16, 32), dim=512, depth=6, heads=8, mlp_dim=512, channels=3,
                  dim_head=64, dropout=0., emb_dropout=0., pool='cls'):
         super().__init__()
         image_height, image_width = pair(image_size)
@@ -365,19 +359,19 @@ class ViT(nn.Module):
         #     Rearrange('b c (h p1) (w p2) -> b (h w) (p1 p2 c)', p1=patch_height, p2=patch_width),
         #     nn.Linear(patch_dim, dim)
         # )
-        # self.to_patch_embedding = nn.Unfold(kernel_size=patch_size, stride=patch_size)
-        # self.patch_weight = nn.Parameter(torch.randn(patch_dim, dim))
-        self.to_image_embedding = nn.Sequential(
-            resnet18(),
-            Rearrange('b c h w -> b (h w) c')
-        )
+        self.to_patch_embedding = nn.Unfold(kernel_size=patch_size, stride=patch_size)
+        self.patch_weight = nn.Parameter(torch.randn(patch_dim, dim))
+        # self.to_image_embedding = nn.Sequential(
+        #     resnet50(),
+        #     Rearrange('b c h w -> b (h w) c')
+        # )
 
         self.to_target_embedding = nn.Sequential(
             Rearrange('b c (pn1 h) (pn2 w) -> b (pn1 pn2) (h w c)', pn1=1, pn2=1),
-            nn.Linear(patch_dim, dim)
+            nn.Linear(6144, dim)
         )
 
-        self.pos_embedding = nn.Parameter(torch.randn(1, 512 + 1, dim))
+        self.pos_embedding = nn.Parameter(torch.randn(1, 1024 + 1, dim))
         # self.pos_embedding = nn.Parameter(torch.randn(1, num_patches, dim))
 
         # self.cls_token = nn.Parameter(torch.randn(1, 1, dim))
@@ -388,36 +382,43 @@ class ViT(nn.Module):
 
         self.pool = pool
 
-        self.l = nn.Linear(513, 512)
+        self.l = nn.Linear(1025, 1024)
 
-        self.to_cnn = nn.Sequential(
-            Rearrange('b (h w) c -> b c h w', h=16, w=32)
+        self.to_up = nn.Sequential(
+            nn.Linear(dim, 1536),
+            Rearrange('b (h w) (p1 p2 c) -> b c (h p1) (w p2)', p1=16, p2=32, c=3, h=32)
         )
+
+        # self.to_cnn = nn.Sequential(
+        #     Rearrange('b (h w) c -> b c h w', h=16, w=32)
+        # )
 
         self.match_head = MatchHead()
 
-    def forward(self, img, target_img=None):
-        x = self.to_image_embedding(img)  # [N, 512, 512]
+    def forward(self, img, target_img):
+        x = self.to_patch_embedding(img).transpose(-1, -2)
+        x = x @ self.patch_weight  # [N, 1024, 512]
 
         target = self.to_target_embedding(target_img)  # [N, 1, 512]
 
         b, n, _ = x.shape
         # cls_tokens = repeat(self.cls_token, '1 1 d -> b 1 d', b=b)
         #
-        x = torch.cat((target, x), dim=1)  # [N, 513, 512]
+        x = torch.cat((target, x), dim=1)  # [N, 1025, 512]
 
         #
         # target = torch.cat((cls_tokens, target), dim=1)
 
-        x += self.pos_embedding[:, :(n + 1)]  # [N, 513, 512]
+        x += self.pos_embedding[:, :(n + 1)]  # [N, 1025, 512]
 
         x = self.dropout(x)
 
-        x = self.transformer(x)  # [N, 513, 512]
+        x = self.transformer(x)  # [N, 1025, 512]
 
-        x = self.l(x.permute(0, 2, 1))  # [N, 512, 512]
+        x = self.l(x.permute(0, 2, 1)).permute(0, 2, 1)  # [N, 1024, 512]
 
-        x = self.to_cnn(x)  # [N, 512, 16, 32]
+        # x = self.to_cnn(x)  # [N, 512, 16, 32]
+        x = self.to_up(x)
 
         x = self.match_head(x)
 
@@ -425,12 +426,14 @@ class ViT(nn.Module):
 
 
 if __name__ == '__main__':
-    model = ViT(patch_size=(32, 64), dim=512, depth=6, heads=8, mlp_dim=512)
+    import time
+    model = ViT()
 
     img = torch.randn((1, 3, 512, 1024))
 
     target_img = torch.randn((1, 3, 32, 64))
-
+    s = time.time()
     out = model(img, target_img)
+    print(time.time() - s)
     print(out.shape)
     # print(out)

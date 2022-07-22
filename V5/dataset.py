@@ -98,11 +98,11 @@ class ViTSegDataset(Dataset):
         return data_list
 
     def get_crop_img(self, ori_h, ori_w, binary):
-        start = time.time()
+        # start = time.time()
         while True:
-            end = time.time()
-            if end - start > 10:
-                return None
+            # end = time.time()
+            # if end - start > 10:
+            #     return None
             x1 = random.randint(0, ori_w - self.target_w_range[0])
             y1 = random.randint(0, ori_h - self.target_h_range[0])
             target_w = random.randint(self.target_w_range[0], self.target_w_range[1])
@@ -131,9 +131,8 @@ class ViTSegDataset(Dataset):
 
             target_box = self.get_crop_img(ori_h, ori_w, binary)
 
-            if target_box is None:
-                return self.__getitem__(np.random.randint(self.__len__()))
-
+            # if target_box is None:
+            #     return self.__getitem__(np.random.randint(self.__len__()))
 
             target = img[target_box[1]:target_box[3], target_box[0]:target_box[2]]
 
@@ -162,8 +161,7 @@ class ViTSegDataset(Dataset):
 
 
 if __name__ == '__main__':
-    dataset = ViTSegDataset(dataset_dir='/Users/yuemengrui/Data/RPAUI/train_data', target_w_range=(116, 140),
-                            target_h_range=(58, 70), target_w_h_rate=(0.8, 10))
+    dataset = ViTSegDataset(dataset_dir='/Users/yuemengrui/Data/RPAUI/train_data')
     for i in range(20):
         s = time.time()
         img, target, label = dataset[i]
