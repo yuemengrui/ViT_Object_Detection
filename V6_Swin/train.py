@@ -204,7 +204,7 @@ class Trainer:
         # self.criterion = nn.BCELoss()
         # self.criterion = nn.MSELoss()
         # self.criterion = nn.L1Loss()
-        weight = torch.tensor([1, 256.0]).to(self.device)
+        weight = torch.tensor([1.0, 45.0]).to(self.device)
         self.criterion = nn.CrossEntropyLoss(weight=weight, size_average=True, ignore_index=255, reduction='mean')
 
         # self.criterion = FocalLoss()
@@ -259,10 +259,10 @@ class Trainer:
 
 if __name__ == '__main__':
     configs = {
-        'save_dir': './checkpoints',
-        'dataset_dir': '/data/guorui/ViT_DET/train_data',
+        'save_dir': './checkpoints_img',
+        'dataset_dir': '/data/guorui/ViT_DET/train_data_img',
         'Epochs': 10000,
-        'batch_size': 32,
+        'batch_size': 4,
         'lr': 1e-4,
         'weight_decay': 1e-2,
         # 't_initial': 100000,  # EPOCHS * n_iter_per_epoch

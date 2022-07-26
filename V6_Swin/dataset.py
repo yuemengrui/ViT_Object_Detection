@@ -93,9 +93,9 @@ class ViTSegDataset(Dataset):
 
             data_list.append({'img_path': img_path, 'label_path': label_path})
 
-        if mode == 'val':
-            random.shuffle(data_list)
-            return data_list[:100]
+        # if mode == 'val':
+        #     random.shuffle(data_list)
+        #     return data_list[:100]
         return data_list
 
     def get_crop_img(self, ori_h, ori_w, binary):
@@ -162,20 +162,30 @@ class ViTSegDataset(Dataset):
 
 
 if __name__ == '__main__':
-    dataset = ViTSegDataset(dataset_dir='/Users/yuemengrui/Data/RPAUI/train_data')
-    # for i in range(20):
+    dataset = ViTSegDataset(dataset_dir='/Users/yuemengrui/Data/RPAUI/train_data_img')
+    ll = []
+    for i in range(83):
     #     s = time.time()
-    img, target, label = dataset[0]
+        img, target, label = dataset[i]
+        l = np.sum(label == 1)
+        a = np.sum(label == 0)
+        ll.append(l/a)
         # print(time.time() - s)
-    #
-    cv2.imshow('xx', img)
-    cv2.waitKey(0)
+        #
+        # cv2.imshow('xx', img)
+        # cv2.waitKey(0)
+        #
+        # cv2.imshow('t', target)
+        # cv2.waitKey(0)
+        #
+        # cv2.imshow('l', label * 255)
+        # cv2.waitKey(0)
 
-    cv2.imshow('t', target)
-    cv2.waitKey(0)
-
-    cv2.imshow('l', label * 255)
-    cv2.waitKey(0)
+    ll.sort()
+    print(ll)
+    mean = np.mean(np.array(ll))
+    print(mean)
+    print(1/mean)
 #     rate = 0
 #     start = time.time()
 #     for i in range(100):
