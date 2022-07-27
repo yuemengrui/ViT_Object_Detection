@@ -13,7 +13,7 @@ from torch.utils.data import DataLoader
 
 class RandomCrop(object):
 
-    def __init__(self, size=(608, 960)):
+    def __init__(self, size=(512, 832)):
         self.size = size
 
     def __call__(self, img, label, **kwargs):
@@ -36,7 +36,7 @@ class RandomCrop(object):
 
 class ImageResize(object):
 
-    def __init__(self, size=(960, 608)):
+    def __init__(self, size=(832, 512)):
         self.size = size
 
     def __call__(self, img, label, **kwargs):

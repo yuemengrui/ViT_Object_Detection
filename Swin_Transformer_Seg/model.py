@@ -473,8 +473,8 @@ class PatchEmbed(nn.Module):
 class SwinTransformer(nn.Module):
 
     def __init__(self,
-                 img_size=(608, 960),
-                 patch_size=(8, 12),
+                 img_size=(512, 832),
+                 patch_size=(8, 13),
                  in_chans=3,
                  embed_dim=96,
                  depths=None,
@@ -612,7 +612,7 @@ if __name__ == '__main__':
 
     model = SwinTransformer()
 
-    img = torch.randn(1, 3, 608, 960)
+    img = torch.randn(1, 3, 512, 832)  # 512, 832
     start = time.time()
     out = model(img)
     end = time.time()
