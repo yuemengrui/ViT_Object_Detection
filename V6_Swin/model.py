@@ -3,7 +3,6 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import torch.utils.checkpoint as checkpoint
 import numpy as np
 from einops.layers.torch import Rearrange
 from timm.models.layers import DropPath, to_2tuple, trunc_normal_
@@ -119,14 +118,14 @@ class WindowAttention(nn.Module):
         proj_drop (float, optional): Dropout ratio of output. Default: 0.0
     """
 
-    def __init__(self, dim, window_size, num_heads, qkv_bias=True, qk_scale=None, attn_drop=0., proj_drop=0.):
+    def __init__(self, dim, window_size, num_heads, qkv_bias=True, attn_drop=0., proj_drop=0.):
 
         super().__init__()
         self.dim = dim
         self.window_size = window_size  # Wh, Ww
         self.num_heads = num_heads
         head_dim = dim // num_heads
-        self.scale = qk_scale or head_dim ** -0.5
+        self.scale = head_dim ** -0.5
 
         # define a parameter table of relative position bias
         self.relative_position_bias_table = nn.Parameter(
@@ -207,7 +206,7 @@ class SwinTransformerBlock(nn.Module):
     """
 
     def __init__(self, dim, num_heads, window_size=7, shift_size=0,
-                 mlp_ratio=4., qkv_bias=True, qk_scale=None, drop=0., attn_drop=0., drop_path=0.,
+                 mlp_ratio=4., qkv_bias=True, drop=0., attn_drop=0., drop_path=0.,
                  act_layer=nn.GELU, norm_layer=nn.LayerNorm):
         super().__init__()
         self.dim = dim
@@ -220,7 +219,7 @@ class SwinTransformerBlock(nn.Module):
         self.norm1 = norm_layer(dim)
         self.attn = WindowAttention(
             dim, window_size=to_2tuple(self.window_size), num_heads=num_heads,
-            qkv_bias=qkv_bias, qk_scale=qk_scale, attn_drop=attn_drop, proj_drop=drop)
+            qkv_bias=qkv_bias, attn_drop=attn_drop, proj_drop=drop)
 
         self.drop_path = DropPath(drop_path) if drop_path > 0. else nn.Identity()
         self.norm2 = norm_layer(dim)
@@ -360,18 +359,15 @@ class BasicLayer(nn.Module):
                  window_size=7,
                  mlp_ratio=4.,
                  qkv_bias=True,
-                 qk_scale=None,
                  drop=0.,
                  attn_drop=0.,
                  drop_path=0.,
                  norm_layer=nn.LayerNorm,
-                 downsample=None,
-                 use_checkpoint=False):
+                 downsample=None):
         super().__init__()
         self.window_size = window_size
         self.shift_size = window_size // 2
         self.depth = depth
-        self.use_checkpoint = use_checkpoint
 
         # build blocks
         self.blocks = nn.ModuleList([
@@ -382,7 +378,6 @@ class BasicLayer(nn.Module):
                 shift_size=0 if (i % 2 == 0) else window_size // 2,
                 mlp_ratio=mlp_ratio,
                 qkv_bias=qkv_bias,
-                qk_scale=qk_scale,
                 drop=drop,
                 attn_drop=attn_drop,
                 drop_path=drop_path[i] if isinstance(drop_path, list) else drop_path,
@@ -426,10 +421,9 @@ class BasicLayer(nn.Module):
 
         for blk in self.blocks:
             blk.H, blk.W = H, W
-            if self.use_checkpoint:
-                x = checkpoint.checkpoint(blk, x, attn_mask)
-            else:
-                x = blk(x, attn_mask)
+
+            x = blk(x, attn_mask)
+
         if self.downsample is not None:
             x_down = self.downsample(x, H, W)
             Wh, Ww = (H + 1) // 2, (W + 1) // 2
@@ -483,16 +477,12 @@ class SwinTransformer(nn.Module):
                  window_size=7,
                  mlp_ratio=4.,
                  qkv_bias=True,
-                 qk_scale=None,
                  drop_rate=0.,
                  attn_drop_rate=0.,
                  drop_path_rate=0.2,
                  norm_layer=nn.LayerNorm,
-                 ape=False,
                  patch_norm=True,
-                 out_indices=(0, 1, 2, 3),
-                 frozen_stages=-1,
-                 use_checkpoint=False):
+                 out_indices=(0, 1, 2, 3)):
         super().__init__()
 
         if depths is None:
@@ -504,10 +494,8 @@ class SwinTransformer(nn.Module):
         self.img_size = img_size
         self.num_layers = len(depths)
         self.embed_dim = embed_dim
-        self.ape = ape
         self.patch_norm = patch_norm
         self.out_indices = out_indices
-        self.frozen_stages = frozen_stages
 
         # split image into non-overlapping patches
         self.patch_embed = PatchEmbed(patch_size=patch_size, in_chans=in_chans, embed_dim=embed_dim)
@@ -539,13 +527,11 @@ class SwinTransformer(nn.Module):
                 window_size=window_size,
                 mlp_ratio=mlp_ratio,
                 qkv_bias=qkv_bias,
-                qk_scale=qk_scale,
                 drop=drop_rate,
                 attn_drop=attn_drop_rate,
                 drop_path=dpr[sum(depths[:i_layer]):sum(depths[:i_layer + 1])],
                 norm_layer=norm_layer,
-                downsample=PatchMerging if (i_layer < self.num_layers - 1) else None,
-                use_checkpoint=use_checkpoint)
+                downsample=PatchMerging if (i_layer < self.num_layers - 1) else None)
             self.layers.append(layer)
 
         num_features = [int(embed_dim * 2 ** i) for i in range(self.num_layers)]
@@ -559,36 +545,17 @@ class SwinTransformer(nn.Module):
 
         self.head = SegHead(img_size)
 
-        self._freeze_stages()
-
-    def _freeze_stages(self):
-        if self.frozen_stages >= 0:
-            self.patch_embed.eval()
-            for param in self.patch_embed.parameters():
-                param.requires_grad = False
-
-        if self.frozen_stages >= 1 and self.ape:
-            self.absolute_pos_embed.requires_grad = False
-
-        if self.frozen_stages >= 2:
-            self.pos_drop.eval()
-            for i in range(0, self.frozen_stages - 1):
-                m = self.layers[i]
-                m.eval()
-                for param in m.parameters():
-                    param.requires_grad = False
-
     def forward(self, x, target):
 
         x = self.patch_embed(x)
 
         Wh, Ww = x.size(2), x.size(3)
-        if self.ape:
-            # interpolate the position embedding to the corresponding size
-            absolute_pos_embed = F.interpolate(self.absolute_pos_embed, size=(Wh, Ww), mode='bicubic')
-            x = (x + absolute_pos_embed).flatten(2).transpose(1, 2)  # B Wh*Ww C
-        else:
-            x = x.flatten(2).transpose(1, 2)
+
+        # interpolate the position embedding to the corresponding size
+        # absolute_pos_embed = F.interpolate(self.absolute_pos_embed, size=(Wh, Ww), mode='bicubic')
+
+        x = (x + self.absolute_pos_embed).flatten(2).transpose(1, 2)  # B Wh*Ww C
+
         x = self.pos_drop(x)
 
         target = self.to_target_embedding(target)  # [N, 1, 96]
@@ -611,11 +578,6 @@ class SwinTransformer(nn.Module):
         x = self.head(tuple(outs))
 
         return x
-
-    def train(self, mode=True):
-        """Convert the model into training mode while keep layers freezed."""
-        super(SwinTransformer, self).train(mode)
-        self._freeze_stages()
 
 
 if __name__ == '__main__':
