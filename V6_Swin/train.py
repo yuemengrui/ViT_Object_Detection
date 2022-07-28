@@ -204,8 +204,9 @@ class Trainer:
         # self.criterion = nn.BCELoss()
         # self.criterion = nn.MSELoss()
         # self.criterion = nn.L1Loss()
-        weight = torch.tensor([1.0, 512.0]).to(self.device)
-        self.criterion = nn.CrossEntropyLoss(weight=weight, size_average=True)
+
+        weight = torch.FloatTensor([1.0, 160.0]).to(self.device)
+        self.criterion = nn.CrossEntropyLoss(weight=weight)
 
         # self.criterion = FocalLoss()
 
