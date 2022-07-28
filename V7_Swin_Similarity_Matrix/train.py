@@ -206,7 +206,7 @@ class Trainer:
         # self.criterion = nn.BCELoss()
         # self.criterion = nn.MSELoss()
         # self.criterion = nn.L1Loss()
-        weight = torch.FloatTensor([1.0, 160.0]).to(self.device)
+        weight = torch.FloatTensor([1.0, 180.0]).to(self.device)
         self.criterion = nn.CrossEntropyLoss(weight=weight)
 
         # self.criterion = FocalLoss()
@@ -270,7 +270,7 @@ if __name__ == '__main__':
         # 't_initial': 100000,  # EPOCHS * n_iter_per_epoch
         # 'warmup_t': 20*12,  # WARMUP_EPOCHS * n_iter_per_epoch
         'Train': {
-            'resume_checkpoint': ''
+            'resume_checkpoint': '/data/guorui/ViT_DET/ViT_Object_Detection/V7_Swin_Similarity_Matrix/checkpoints/model_best.pth'
         }
     }
     trainer = Trainer(configs)

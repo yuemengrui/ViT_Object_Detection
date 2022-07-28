@@ -24,11 +24,12 @@ def crop_ok(target_box, binary, threshold=0.4):
 
 class ImagePadding(object):
 
-    def __init__(self, rate=512/832):
+    def __init__(self, rate=512 / 832, value=0):
         """
         :param rate: rate = h / w
         """
         self.rate = rate
+        self.value = value
 
     def __call__(self, img):
         ori_h, ori_w = img.shape[:2]
@@ -36,11 +37,11 @@ class ImagePadding(object):
         if ori_h / ori_w > self.rate:
             new_w = ori_h / self.rate
             border = int((new_w - ori_w) / 2)
-            img = cv2.copyMakeBorder(img, 0, 0, border, border, cv2.BORDER_CONSTANT, value=(0, 0, 0))
+            img = cv2.copyMakeBorder(img, 0, 0, border, border, cv2.BORDER_CONSTANT, value=self.value)
         elif ori_h / ori_w < self.rate:
             new_h = ori_w * self.rate
             border = int((new_h - ori_h) / 2)
-            img = cv2.copyMakeBorder(img, border, border, 0, 0, cv2.BORDER_CONSTANT, value=(0, 0, 0))
+            img = cv2.copyMakeBorder(img, border, border, 0, 0, cv2.BORDER_CONSTANT, value=self.value)
 
         return img
 
@@ -61,14 +62,15 @@ class ImageResize(object):
 class ViTSegDataset(Dataset):
 
     def __init__(self, dataset_dir, mode='train', target_w_range=(32, 960), target_h_range=(20, 224),
-                 target_w_h_rate=(0.7, 20), threshold=0.4, **kwargs):
+                 target_w_h_rate=(0.8, 5.0), threshold=0.4, **kwargs):
 
         self.target_w_range = target_w_range
         self.target_h_range = target_h_range
         self.target_w_h_rate = target_w_h_rate
         self.threshold = threshold
 
-        self.image_padding = ImagePadding()
+        self.image_padding = ImagePadding(value=255)
+        self.label_padding = ImagePadding()
         self.target_padding = ImagePadding(0.5)
         self.image_resize = ImageResize()
         self.target_resize = ImageResize(size=(64, 32))
@@ -147,7 +149,7 @@ class ViTSegDataset(Dataset):
             target, _ = self.target_resize(target)
             target = self.transform(target)
 
-            label = self.image_padding(label)
+            label = self.label_padding(label)
             label, _ = self.image_resize(label)
             label = torch.from_numpy(label)
 
@@ -167,18 +169,33 @@ if __name__ == '__main__':
     import torch.nn as nn
 
     dataset = ViTSegDataset(dataset_dir='/Users/yuemengrui/Data/RPAUI/train_data_new')
-    l = []
-    for i in range(337):
+    # l0 = []
+    # l1 = []
+    num_0 = 0
+    num_1 = 0
+    for i in range(10):
         # s = time.time()
         img, target, label = dataset[i]
 
-        num_1 = np.sum(label==1)
-        num_0 = np.sum(label==0)
-        l.append(num_0/num_1)
+        num_1 += np.sum(label == 1)
+        num_0 += np.sum(label == 0)
 
-    l.sort()
-    print(l)
-    print(np.mean(np.array(l)))
+        # l0.append(num_0 / (512*832))
+        # l1.append(num_1 / (512*832))
+        # l2.append(num_1 / num_0)
+
+    num_0 = num_0 / 337
+    num_1 = num_1 / 337
+    print(num_0, num_1)
+    print(num_0 / num_1)
+    # l.sort()
+    # print(l)
+    # print(np.mean(np.array(l0)))
+    # print(np.mean(np.array(l1)))
+    #
+    # l2.sort()
+    # print(l2)
+    # print(np.mean(np.array(l2)))
     # im = img[500:504,500:504]
     # # cv2.imshow('xx', im)
     # # cv2.waitKey(0)
@@ -188,13 +205,13 @@ if __name__ == '__main__':
     # cv2.imwrite('./t.jpg', t)
     # im = deepcopy(img)
 
-        # print(time.time() - s)
+    # print(time.time() - s)
     #
-        # cv2.imshow('xx', img)
-        # cv2.waitKey(0)
+    # cv2.imshow('xx', img)
+    # cv2.waitKey(0)
     #
-        # cv2.imshow('t', target)
-        # cv2.waitKey(0)
+    # cv2.imshow('t', target)
+    # cv2.waitKey(0)
     #
     # cv2.imshow('l', label * 255)
     # cv2.waitKey(0)

@@ -205,7 +205,7 @@ class Trainer:
         # self.criterion = nn.MSELoss()
         # self.criterion = nn.L1Loss()
 
-        weight = torch.FloatTensor([1.0, 160.0]).to(self.device)
+        weight = torch.FloatTensor([1.0, 180.0]).to(self.device)
         self.criterion = nn.CrossEntropyLoss(weight=weight)
 
         # self.criterion = FocalLoss()
@@ -263,13 +263,13 @@ if __name__ == '__main__':
         'save_dir': './checkpoints',
         'dataset_dir': '/data/guorui/ViT_DET/train_data_new',
         'Epochs': 10000,
-        'batch_size': 12,
+        'batch_size': 36,
         'lr': 1e-4,
         'weight_decay': 1e-2,
         # 't_initial': 100000,  # EPOCHS * n_iter_per_epoch
         # 'warmup_t': 20*12,  # WARMUP_EPOCHS * n_iter_per_epoch
         'Train': {
-            'resume_checkpoint': ''
+            'resume_checkpoint': '/data/guorui/ViT_DET/ViT_Object_Detection/V6_Swin/checkpoints/model_best.pth'
         }
     }
     trainer = Trainer(configs)
