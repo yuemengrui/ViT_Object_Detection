@@ -136,9 +136,9 @@ class Trainer:
             self._save_checkpoint(self.epoch_result['epoch'])
             logger.val.info("Saving best model")
 
-        if self.epoch_result['epoch'] % 100 == 0:
-            checkpoint_path = os.path.join(self.save_dir, 'epoch_{}.pth'.format(self.epoch_result['epoch']))
-            self._save_checkpoint(self.epoch_result['epoch'], path=checkpoint_path)
+        # if self.epoch_result['epoch'] % 100 == 0:
+        #     checkpoint_path = os.path.join(self.save_dir, 'epoch_{}.pth'.format(self.epoch_result['epoch']))
+        #     self._save_checkpoint(self.epoch_result['epoch'], path=checkpoint_path)
 
         logger.val.info(
             'best model: {}\n'.format(str(self.metrics)))
@@ -204,8 +204,8 @@ class Trainer:
         # self.criterion = nn.BCELoss()
         # self.criterion = nn.MSELoss()
         # self.criterion = nn.L1Loss()
-        weight = torch.tensor([1.0, 45.0]).to(self.device)
-        self.criterion = nn.CrossEntropyLoss(weight=weight, size_average=True, ignore_index=255, reduction='mean')
+        weight = torch.tensor([1.0, 512.0]).to(self.device)
+        self.criterion = nn.CrossEntropyLoss(weight=weight, size_average=True)
 
         # self.criterion = FocalLoss()
 
@@ -259,10 +259,10 @@ class Trainer:
 
 if __name__ == '__main__':
     configs = {
-        'save_dir': './checkpoints_img',
-        'dataset_dir': '/data/guorui/ViT_DET/train_data_img',
+        'save_dir': './checkpoints',
+        'dataset_dir': '/data/guorui/ViT_DET/train_data_new',
         'Epochs': 10000,
-        'batch_size': 4,
+        'batch_size': 12,
         'lr': 1e-4,
         'weight_decay': 1e-2,
         # 't_initial': 100000,  # EPOCHS * n_iter_per_epoch

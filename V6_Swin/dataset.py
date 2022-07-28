@@ -11,7 +11,7 @@ from torchvision import transforms
 from torch.utils.data import DataLoader
 
 
-def crop_ok(target_box, binary, threshold=0.6):
+def crop_ok(target_box, binary, threshold=0.4):
     target_bin = binary[target_box[1]:target_box[3], target_box[0]:target_box[2]]
 
     t_h, t_w = target_bin.shape[:2]
@@ -24,7 +24,7 @@ def crop_ok(target_box, binary, threshold=0.6):
 
 class ImagePadding(object):
 
-    def __init__(self, rate=0.625):
+    def __init__(self, rate=512/832):
         """
         :param rate: rate = h / w
         """
@@ -47,7 +47,7 @@ class ImagePadding(object):
 
 class ImageResize(object):
 
-    def __init__(self, size=(960, 608)):
+    def __init__(self, size=(832, 512)):
         self.size = size
 
     def __call__(self, img, **kwargs):
@@ -61,7 +61,7 @@ class ImageResize(object):
 class ViTSegDataset(Dataset):
 
     def __init__(self, dataset_dir, mode='train', target_w_range=(32, 960), target_h_range=(20, 224),
-                 target_w_h_rate=(0.7, 20), threshold=0.7, **kwargs):
+                 target_w_h_rate=(0.7, 20), threshold=0.4, **kwargs):
 
         self.target_w_range = target_w_range
         self.target_h_range = target_h_range
@@ -99,11 +99,11 @@ class ViTSegDataset(Dataset):
         return data_list
 
     def get_crop_img(self, ori_h, ori_w, binary):
-        # start = time.time()
+        start = time.time()
         while True:
-            # end = time.time()
-            # if end - start > 10:
-            #     return None
+            end = time.time()
+            if end - start > 12:
+                return None
             x1 = random.randint(0, ori_w - self.target_w_range[0])
             y1 = random.randint(0, ori_h - self.target_h_range[0])
             target_w = random.randint(self.target_w_range[0], self.target_w_range[1])
@@ -132,8 +132,8 @@ class ViTSegDataset(Dataset):
 
             target_box = self.get_crop_img(ori_h, ori_w, binary)
 
-            # if target_box is None:
-            #     return self.__getitem__(np.random.randint(self.__len__()))
+            if target_box is None:
+                return self.__getitem__(np.random.randint(self.__len__()))
 
             target = img[target_box[1]:target_box[3], target_box[0]:target_box[2]]
 
@@ -162,30 +162,78 @@ class ViTSegDataset(Dataset):
 
 
 if __name__ == '__main__':
-    dataset = ViTSegDataset(dataset_dir='/Users/yuemengrui/Data/RPAUI/train_data_img')
-    ll = []
-    for i in range(83):
-    #     s = time.time()
+    from copy import deepcopy
+    import torch.nn.functional as F
+    import torch.nn as nn
+
+    dataset = ViTSegDataset(dataset_dir='/Users/yuemengrui/Data/RPAUI/train_data_new')
+    l = []
+    for i in range(337):
+        # s = time.time()
         img, target, label = dataset[i]
-        l = np.sum(label == 1)
-        a = np.sum(label == 0)
-        ll.append(l/a)
+
+        num_1 = np.sum(label==1)
+        num_0 = np.sum(label==0)
+        l.append(num_0/num_1)
+
+    l.sort()
+    print(l)
+    print(np.mean(np.array(l)))
+    # im = img[500:504,500:504]
+    # # cv2.imshow('xx', im)
+    # # cv2.waitKey(0)
+    # cv2.imwrite('./im.jpg', im)
+    #
+    # t = img[:2,:2]
+    # cv2.imwrite('./t.jpg', t)
+    # im = deepcopy(img)
+
         # print(time.time() - s)
-        #
+    #
         # cv2.imshow('xx', img)
         # cv2.waitKey(0)
-        #
+    #
         # cv2.imshow('t', target)
         # cv2.waitKey(0)
-        #
-        # cv2.imshow('l', label * 255)
-        # cv2.waitKey(0)
+    #
+    # cv2.imshow('l', label * 255)
+    # cv2.waitKey(0)
 
-    ll.sort()
-    print(ll)
-    mean = np.mean(np.array(ll))
-    print(mean)
-    print(1/mean)
+    # cv2.rectangle(im, (target_box[0], target_box[1]), (target_box[2], target_box[3]), (0,0,255), 2)
+    # cv2.imshow('xx', im)
+    # cv2.waitKey(0)
+    # img = cv2.imread('/Users/yuemengrui/Data/OCR/train_data/cn/cn00000006.jpg')
+    # im = img[10:20, 10:20]
+    # target = im[2:7, 2:7]
+    # res = cv2.matchTemplate(im, target, cv2.TM_CCOEFF_NORMED)
+    # print(res)
+    # r = cv2.resize(res, (10, 10))
+    # print(r)
+    # print(res)
+    # (minVal, maxVal, minLoc, maxLoc) = cv2.minMaxLoc(res)
+    # (startX, startY) = maxLoc
+    # endX = startX + target.shape[1]
+    # endY = startY + target.shape[0]
+    #
+    # cv2.rectangle(im, (startX,startY), (endX,endY), (255,0,0), 2)
+    # cv2.imshow('xx', im)
+    # cv2.waitKey(0)
+    # img = img.unsqueeze(0)
+    # target = target.unsqueeze(0)
+    # feature = F.conv2d(img, target)
+    # print(feature)
+    # bn = nn.BatchNorm2d(1)
+    # f = bn(feature)
+    # print(f)
+
+    # ll.sort()
+    # print(ll)
+    # mean = np.mean(np.array(ll))
+    # print(mean)
+    # m = np.mean(np.array(l1))
+    # print(m)
+    # print(1 / m)
+    # print(1/mean)
 #     rate = 0
 #     start = time.time()
 #     for i in range(100):
