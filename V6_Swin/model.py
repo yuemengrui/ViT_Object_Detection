@@ -505,24 +505,25 @@ class SwinTransformer(nn.Module):
         #     Rearrange('b c (pn1 h) (pn2 w) -> b (pn1 pn2) (h w c)', pn1=1, pn2=1),
         #     nn.Linear(6144, embed_dim)
         # )
-        self.to_target_embedding_list = [
-            nn.Sequential(
-                Rearrange('b c (pn1 h) (pn2 w) -> b (pn1 pn2) (h w c)', pn1=1, pn2=1),
-                nn.Linear(6144, 96)
-            ),
-            nn.Sequential(
-                Rearrange('b c (pn1 h) (pn2 w) -> b (pn1 pn2) (h w c)', pn1=1, pn2=1),
-                nn.Linear(6144, 192)
-            ),
-            nn.Sequential(
-                Rearrange('b c (pn1 h) (pn2 w) -> b (pn1 pn2) (h w c)', pn1=1, pn2=1),
-                nn.Linear(6144, 384)
-            ),
-            nn.Sequential(
-                Rearrange('b c (pn1 h) (pn2 w) -> b (pn1 pn2) (h w c)', pn1=1, pn2=1),
-                nn.Linear(6144, 768)
-            )
-        ]
+        self.to_target_embedding_1 = nn.Sequential(
+            Rearrange('b c (pn1 h) (pn2 w) -> b (pn1 pn2) (h w c)', pn1=1, pn2=1),
+            nn.Linear(6144, 96)
+        )
+
+        self.to_target_embedding_2 = nn.Sequential(
+            Rearrange('b c (pn1 h) (pn2 w) -> b (pn1 pn2) (h w c)', pn1=1, pn2=1),
+            nn.Linear(6144, 192)
+        )
+
+        self.to_target_embedding_3 = nn.Sequential(
+            Rearrange('b c (pn1 h) (pn2 w) -> b (pn1 pn2) (h w c)', pn1=1, pn2=1),
+            nn.Linear(6144, 384)
+        )
+
+        self.to_target_embedding_4 = nn.Sequential(
+            Rearrange('b c (pn1 h) (pn2 w) -> b (pn1 pn2) (h w c)', pn1=1, pn2=1),
+            nn.Linear(6144, 768)
+        )
 
         # absolute position embedding
         patches_resolution = [img_size[0] // patch_size[0], img_size[1] // patch_size[1]]
@@ -578,18 +579,25 @@ class SwinTransformer(nn.Module):
         x = self.pos_drop(x)
 
         # target = self.to_target_embedding(target)  # [N, 1, 96]
-        target_emb_list = [self.to_target_embedding_list[t](target) for t in range(len(self.to_target_embedding_list))]
+        target_emb1 = self.to_target_embedding_1(target)
+        target_emb2 = self.to_target_embedding_2(target)
+        target_emb3 = self.to_target_embedding_3(target)
+        target_emb4 = self.to_target_embedding_4(target)
 
         # x = torch.cat((target, x), dim=1)
-        x += target_emb_list[0]
+        x += target_emb1
 
         outs = []
         for i in range(self.num_layers):
             layer = self.layers[i]
             x_out, H, W, x, Wh, Ww = layer(x, Wh, Ww)
 
-            if i < 3:
-                x += target_emb_list[i + 1]
+            if i == 0:
+                x += target_emb2
+            elif i == 1:
+                x += target_emb3
+            elif i == 2:
+                x += target_emb4
 
             if i in self.out_indices:
                 norm_layer = getattr(self, f'norm{i}')
