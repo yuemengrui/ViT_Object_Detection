@@ -578,7 +578,7 @@ class SwinTransformer(nn.Module):
         x = self.pos_drop(x)
 
         # target = self.to_target_embedding(target)  # [N, 1, 96]
-        target_emb_list = [l(target) for l in self.to_target_embedding_list]
+        target_emb_list = [self.to_target_embedding_list[t](target) for t in range(len(self.to_target_embedding_list))]
 
         # x = torch.cat((target, x), dim=1)
         x += target_emb_list[0]
