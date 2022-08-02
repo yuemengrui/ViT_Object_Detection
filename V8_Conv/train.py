@@ -9,7 +9,7 @@ import torch.optim as optim
 import torch.optim.lr_scheduler as lr_scheduler
 # from timm.scheduler.cosine_lr import CosineLRScheduler
 from torch.utils.data import DataLoader
-from model import SwinTransformer
+from model import MatchUNet
 from dataset import ViTSegDataset
 from metrics import SegMetrics
 import logger as logger
@@ -80,7 +80,7 @@ class Trainer:
             train_loss += loss.item()
 
             batch_cost = time.time() - batch_start
-            if i % 100 == 0:
+            if i % 50 == 0:
                 logger.train.info(
                     '[epoch:{}/{}] [iter:{}/{}] global_step:{}, loss:{}, lr:{:.9f}, reader_cost:{:.2f}s, batch_cost:{:.2f}s, speed:{:.1f}/s'.format(
                         epoch, self.epochs, i + 1, self.train_loader_len, self.global_step, loss.item(), lr, reader_cost,
@@ -200,12 +200,12 @@ class Trainer:
     def _initialize(self):
         start = time.time()
 
-        self.model = SwinTransformer()
+        self.model = MatchUNet()
 
         # self.criterion = nn.BCELoss()
         # self.criterion = nn.MSELoss()
         # self.criterion = nn.L1Loss()
-        weight = torch.FloatTensor([1.0, 180.0]).to(self.device)
+        weight = torch.FloatTensor([1.0, 160.0]).to(self.device)
         self.criterion = nn.CrossEntropyLoss(weight=weight)
 
         # self.criterion = FocalLoss()
