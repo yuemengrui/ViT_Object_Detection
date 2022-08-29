@@ -332,11 +332,11 @@ class VisionTransformer(nn.Module):
         for tsa in self.target_self_attention:
             target = tsa(target)
 
-        img = self.img_pre_norm(img)
+        x = self.img_pre_norm(img)
         target = self.target_pre_norm(target)
 
         for blk in self.blocks:
-            x = blk(img, target)
+            x = blk(x, target)
 
         x = rearrange(x, 'b (h w) c -> b c h w', h=31)
 
