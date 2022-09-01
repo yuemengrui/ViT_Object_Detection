@@ -36,6 +36,6 @@ class MyLoss(nn.Module):
                 loss_list.append(torch.pow(torch.pow(new_p_x - point_1[0], 2) + torch.pow(new_p_y - point_1[1], 2), 0.5))
 
         if len(loss_list) == 0:
-            return torch.tensor(1000, requires_grad=True)
+            return torch.tensor(1000.0, requires_grad=True)
 
         return torch.mean(torch.tensor(loss_list, requires_grad=True))
