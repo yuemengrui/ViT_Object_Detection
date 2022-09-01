@@ -24,8 +24,10 @@ class Metrics(object):
 
                 if label_box[0] <= point_1[0] <= label_box[2] and label_box[1] <= point_1[1] <= label_box[3]:
                     correct += 1
-
-        self.acc_list.append(correct / total)
+        if total == 0:
+            self.acc_list.append(0)
+        else:
+            self.acc_list.append(correct / total)
 
     def get_results(self):
 
