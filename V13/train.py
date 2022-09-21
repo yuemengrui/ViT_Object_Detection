@@ -81,11 +81,12 @@ class Trainer:
 
             batch_cost = time.time() - batch_start
 
-            logger.train.info(
-                '[epoch:{}/{}] [iter:{}/{}] global_step:{}, loss:{}, lr:{:.9f}, reader_cost:{:.2f}s, batch_cost:{:.2f}s, speed:{:.1f}/s'.format(
-                    epoch, self.epochs, i + 1, self.train_loader_len, self.global_step, loss.item(), lr,
-                    reader_cost,
-                    batch_cost, cur_batch_size / batch_cost))
+            if i % 50 == 0:
+                logger.train.info(
+                    '[epoch:{}/{}] [iter:{}/{}] global_step:{}, loss:{}, lr:{:.9f}, reader_cost:{:.2f}s, batch_cost:{:.2f}s, speed:{:.1f}/s'.format(
+                        epoch, self.epochs, i + 1, self.train_loader_len, self.global_step, loss.item(), lr,
+                        reader_cost,
+                        batch_cost, cur_batch_size / batch_cost))
 
             batch_start = time.time()
 
@@ -264,7 +265,7 @@ if __name__ == '__main__':
         'save_dir': './checkpoints',
         'dataset_dir': '/data/guorui/ViT_DET/train_data_new',
         'Epochs': 10000,
-        'batch_size': 64,
+        'batch_size': 2,
         'lr': 1e-4,
         'weight_decay': 1e-2,
         # 't_initial': 100000,  # EPOCHS * n_iter_per_epoch
