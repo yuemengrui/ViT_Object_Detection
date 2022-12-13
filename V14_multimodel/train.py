@@ -121,7 +121,7 @@ class Trainer:
                 target_text_lengths = target_text_lengths.to(self.device)
                 label = label.to(self.device)
 
-                preds = self.model(img, img_texts, img_text_lengths, img_boxes, target, target_texts, target_text_lengths)
+                preds = self.model(img, img_boxes, img_texts, img_text_lengths, target, target_texts, target_text_lengths)
 
                 preds = preds.data.cpu().numpy()
                 label = label.cpu().numpy()
