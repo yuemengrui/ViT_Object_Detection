@@ -258,11 +258,10 @@ class Trainer:
         self.train_data_total = len(train_dataset)
         self.val_data_total = len(val_dataset)
 
-        self.train_loader = DataLoader(train_dataset, batch_size=self.configs.get('batch_size'), shuffle=True,
-                                       drop_last=True)
+        self.train_loader = DataLoader(train_dataset, batch_size=self.configs.get('batch_size'), collate_fn=train_dataset.collate)
         self.train_loader_len = len(self.train_loader)
 
-        self.val_loader = DataLoader(val_dataset, batch_size=1, shuffle=False, drop_last=False)
+        self.val_loader = DataLoader(val_dataset, batch_size=1, shuffle=False, drop_last=False, collate_fn=val_dataset.collate)
         self.val_loader_len = len(self.val_loader)
 
         datasrt_msg = '\n---------------Dataset Information---------------\n'
