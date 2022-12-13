@@ -200,7 +200,7 @@ class ViTSegDataset(Dataset):
             img_boxes.append([0, 0, 0, 0, 0, 0, 0, 0])
             img_boxes = np.array(img_boxes)
         if len(img_texts) == 1:
-            img_boxes = np.array([-1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0])
+            img_boxes = np.array([[-1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0]])
         else:
             img_boxes = np.array(img_boxes)
             img_boxes_min = img_boxes.min(0)
