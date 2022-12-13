@@ -216,8 +216,7 @@ class ViT(nn.Module):
         self.head = SegHead(in_chans=embed_dim)
 
     def lstm_text_embeding(self, text, text_length):
-        text_length = text_length.to('cpu')
-        packed_sequence = pack_padded_sequence(text, text_length, batch_first=True, enforce_sorted=False)
+        packed_sequence = pack_padded_sequence(text, text_length.to('cpu'), batch_first=True, enforce_sorted=False)
         outputs_packed, (h_last, c_last) = self.lstm(packed_sequence)
         # outputs, _ = pad_packed_sequence(outputs_packed)
         return h_last.mean(0)
