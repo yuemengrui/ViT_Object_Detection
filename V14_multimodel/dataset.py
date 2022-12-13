@@ -192,12 +192,15 @@ class ViTSegDataset(Dataset):
                 img_text_lengths.append(img_text_encode.shape[0])
                 img_texts.append(img_text_encode)
                 img_boxes.append([int(x) for x in i['box']])
+
         if len(img_texts) == 0:
             img_text_encode = self._text_encode(' ')
             img_text_lengths.append(img_text_encode.shape[0])
             img_texts.append(img_text_encode)
             img_boxes.append([0, 0, 0, 0, 0, 0, 0, 0])
             img_boxes = np.array(img_boxes)
+        if len(img_texts) == 1:
+            img_boxes = np.array([-1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0])
         else:
             img_boxes = np.array(img_boxes)
             img_boxes_min = img_boxes.min(0)
@@ -287,26 +290,29 @@ class ViTSegDataset(Dataset):
     def __len__(self):
         return len(self.data_list)
 
-
 # if __name__ == '__main__':
-#     from model import ViT
+# from model import ViT
+
+# net = ViT()
+
+# dataset = ViTSegDataset(dataset_dir='/Users/yuemengrui/Data/RPA_UI/train_data_prebox')
+# for i in range(len(dataset)):
+#     print(i)
+# dataset[29]
+# train_loader = DataLoader(dataset, batch_size=1, shuffle=True, drop_last=True, collate_fn=dataset.collate)
+
+# for img, img_texts, img_text_lengths, img_boxes, target, target_texts, target_text_lengths, label in train_loader:
+#     print("====================")
+# print(img.shape)
+# print(img_texts.shape)
+# print(img_text_lengths.shape)
+# print(img_boxes.shape)
+# print(target.shape)
+# print(target_texts.shape)
+# print(target_text_lengths.shape)
+# print(label.shape)
 #
-#     net = ViT()
-#
-#     dataset = ViTSegDataset(dataset_dir='/Users/yuemengrui/Data/RPA_UI/train_data_prebox')
-#     train_loader = DataLoader(dataset, batch_size=1, shuffle=True, drop_last=True, collate_fn=dataset.collate)
-#
-#     for img, img_texts, img_text_lengths, img_boxes, target, target_texts, target_text_lengths, label in train_loader:
-#         print(img.shape)
-#         print(img_texts.shape)
-#         print(img_text_lengths.shape)
-#         print(img_boxes.shape)
-#         print(target.shape)
-#         print(target_texts.shape)
-#         print(target_text_lengths.shape)
-#         print(label.shape)
-#
-#         s = time.time()
-#         out = net(img, img_boxes, img_texts, img_text_lengths, target, target_texts, target_text_lengths)
-#         print(time.time() - s)
-#         break
+# # s = time.time()
+# # out = net(img, img_boxes, img_texts, img_text_lengths, target, target_texts, target_text_lengths)
+# # print(time.time() - s)
+# break
