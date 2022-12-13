@@ -56,7 +56,7 @@ class ImageResize(object):
         # self.padding = padding
 
     def __call__(self, img, label):
-        # h, w = img.shape[:2]
+        h, w = img.shape[:2]
         # if h > w:
         #     new_w = h
         #     border = int((new_w - w) / 2)
@@ -66,13 +66,13 @@ class ImageResize(object):
         #     border = int((new_h - h) / 2)
         #     img = cv2.copyMakeBorder(img, border, border, 0, 0, cv2.BORDER_CONSTANT, value=self.padding)
 
-        # w_scale = self.size_range[1] / w
-        # h_scale = self.size_range[0] / h
+        w_scale = self.size_range[1] / w
+        h_scale = self.size_range[0] / h
         img = cv2.resize(img, (self.size_range[1], self.size_range[0]))
         label = cv2.resize(label, (self.size_range[1], self.size_range[0]))
         # x1, y1, x2, y2 = int(box[0] * w_scale), int(box[1] * h_scale), int(box[2] * w_scale), int(box[3] * h_scale)
 
-        return img, label
+        return img, label, h_scale, w_scale
 
 
 class TargetResize(object):
@@ -173,7 +173,7 @@ class ViTSegDataset(Dataset):
 
         return data_list
 
-    def ocr_res_handler(self, img_h, img_w):
+    def ocr_res_handler(self, img_h, img_w, h_scale, w_scale):
         if self.token_count > 600:
             self.token = get_token()
             self.token_count = 0
@@ -187,13 +187,14 @@ class ViTSegDataset(Dataset):
         img_text_lengths = []
         img_boxes = []
         size = np.array((img_w, img_h))
+        scale = np.array((w_scale, h_scale))
         for i in img_ocr_res:
             if i['text'][1] > 72:
                 img_text_encode = self._text_encode(i['text'][0])
                 img_text_lengths.append(img_text_encode.shape[0])
                 img_texts.append(img_text_encode)
                 box = np.array(i['box']).reshape((4, 2))
-                norm_box = (box / size).reshape((8,)).tolist()
+                norm_box = (box / size * scale).reshape((8,)).tolist()
                 img_boxes.append(norm_box)
 
         if len(img_texts) == 0:
@@ -240,11 +241,13 @@ class ViTSegDataset(Dataset):
             cv2.imwrite(temp_img_path, img)
             cv2.imwrite(temp_target_path, target)
 
-            img, label = self.image_resize(img, label)
+            img, label, h_scale, w_scale = self.image_resize(img, label)
             target = self.target_resize(target)
 
             img_texts, img_text_lengths, img_boxes, target_texts, target_text_lengths = self.ocr_res_handler(img_h,
-                                                                                                             img_w)
+                                                                                                             img_w,
+                                                                                                             h_scale,
+                                                                                                             w_scale)
 
             img = self.transform(img).unsqueeze(0)
             target = self.transform(target).unsqueeze(0)
@@ -286,16 +289,15 @@ class ViTSegDataset(Dataset):
     def __len__(self):
         return len(self.data_list)
 
-
 # if __name__ == '__main__':
-    # from model import ViT
+# from model import ViT
 
-    # net = ViT()
+# net = ViT()
 
-    # dataset = ViTSegDataset(dataset_dir='/Users/yuemengrui/Data/RPA_UI/train_data_prebox')
-    # for i in range(len(dataset)):
-    #     print(i)
-    #     dataset[i]
+# dataset = ViTSegDataset(dataset_dir='/Users/yuemengrui/Data/RPA_UI/train_data_prebox')
+# for i in range(len(dataset)):
+#     print(i)
+#     dataset[i]
 # train_loader = DataLoader(dataset, batch_size=1, shuffle=True, drop_last=True, collate_fn=dataset.collate)
 
 # for img, img_texts, img_text_lengths, img_boxes, target, target_texts, target_text_lengths, label in train_loader:
