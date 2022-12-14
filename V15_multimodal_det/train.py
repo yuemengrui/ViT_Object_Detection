@@ -93,9 +93,12 @@ class Trainer:
             batch_cost = time.time() - batch_start
 
             if i % 50 == 0:
+                loss_str = ''
+                for k, v in loss:
+                    loss_str += (str(k) + ': ' + float(v) + ', ')
                 logger.train.info(
                     '[epoch:{}/{}] [iter:{}/{}] global_step:{}, {}, lr:{:.9f}, reader_cost:{:.2f}s, batch_cost:{:.2f}s, speed:{:.1f}/s'.format(
-                        epoch, self.epochs, i + 1, self.train_loader_len, self.global_step, loss.item(), lr,
+                        epoch, self.epochs, i + 1, self.train_loader_len, self.global_step, loss_str, lr,
                         reader_cost,
                         batch_cost, cur_batch_size / batch_cost))
 
