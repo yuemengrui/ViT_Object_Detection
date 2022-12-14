@@ -248,12 +248,10 @@ class ViT(nn.Module):
         # print('target: ', target.shape)
 
         _, x = self.transformer(target, img)
-        print(x.shape)
+
         x = x.mean(dim=1)
-        print(x.shape)
 
         x = self.mlp_head(x).sigmoid()
-        print(x.shape)
 
         return x
 
