@@ -94,7 +94,7 @@ class Trainer:
 
             if i % 50 == 0:
                 loss_str = ''
-                for k, v in loss:
+                for k, v in loss.items():
                     loss_str += '{}:{:.6f}, '.format(k, v)
                 logger.train.info(
                     '[epoch:{}/{}] [iter:{}/{}] global_step:{}, {}, lr:{:.9f}, reader_cost:{:.2f}s, batch_cost:{:.2f}s, speed:{:.1f}/s'.format(
