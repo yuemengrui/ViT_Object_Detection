@@ -5,7 +5,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.nn import LSTM
-from torch.nn.utils.rnn import pack_padded_sequence
+from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
 from einops import rearrange
 from einops.layers.torch import Rearrange
 from timm.models.layers import trunc_normal_
@@ -190,12 +190,11 @@ class ViT(nn.Module):
         self.pos_embed = nn.Parameter(torch.zeros(1, 3969, embed_dim))
         trunc_normal_(self.pos_embed, std=0.02)
 
-        target_patch_dim = in_chans * 32 * 64
         self.to_target_embedding = nn.Sequential(
             Rearrange('b c (pn1 h) (pn2 w) -> b (pn1 pn2) (h w c)', pn1=1, pn2=1),
-            nn.Linear(target_patch_dim, embed_dim)
+            nn.Linear(6144, embed_dim)
         )
-        self.target_pos_embed = nn.Parameter(torch.zeros(1, target_patch_dim, embed_dim))
+        self.target_pos_embed = nn.Parameter(torch.zeros(1, 1, embed_dim))
         trunc_normal_(self.target_pos_embed, std=0.02)
 
         self.pos_drop = nn.Dropout(p=drop_rate)
@@ -212,7 +211,9 @@ class ViT(nn.Module):
     def lstm_text_embeding(self, text, text_length):
         packed_sequence = pack_padded_sequence(text, text_length.to('cpu'), batch_first=True, enforce_sorted=False)
         outputs_packed, (h_last, c_last) = self.lstm(packed_sequence)
+        # print(h_last.shape, c_last.shape)
         # outputs, _ = pad_packed_sequence(outputs_packed)
+        # print(outputs.shape)
         return h_last.mean(0)
 
     def forward(self, img, img_boxes, img_texts, img_text_lengths, target, target_texts, target_text_lengths):
@@ -220,9 +221,10 @@ class ViT(nn.Module):
         img = img + self.pos_embed
         img = self.pos_drop(img)
 
-        target = self.to_target_embedding(target)  # [N, 6144, 512]
-        # print('target: ', target.shape)
+        target = self.to_target_embedding(target)  # [N, 1, 512]
+
         target = target + self.target_pos_embed
+
         target = self.pos_drop(target)
 
         boxes_embeding = self.boxes_embedding(img_boxes).unsqueeze(0)
