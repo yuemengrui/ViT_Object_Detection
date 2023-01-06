@@ -314,6 +314,7 @@ class ViTSegDataset(Dataset):
 if __name__ == '__main__':
     import torch.nn.functional as F
     from loss import generalized_box_iou, box_iou, box_cxcywh_to_xyxy
+
     from model import ViT
 
     net = ViT()
@@ -329,6 +330,23 @@ if __name__ == '__main__':
     # cv2.waitKey(0)
     # cv2.imshow('t', target)
     # cv2.waitKey(0)
+    # print(label_box)
+    # h, w = img.shape[:2]
+    # print(h, w)
+    # cx = label_box[0] * w
+    # cy = label_box[1] * h
+    # t_w = label_box[2] * w
+    # t_h = label_box[3] * h
+    # print(cx, cy, t_w, t_h)
+    # x1 = int(cx - t_w / 2)
+    # y1 = int(cy - t_h / 2)
+    # x2 = int(cx + t_w / 2)
+    # y2 = int(cy + t_h / 2)
+    # print(x1,y1,x2,y2)
+    # cv2.rectangle(img, (x1,y1), (x2,y2), (0,0,255), 2)
+    # cv2.imshow('xx', img)
+    # cv2.waitKey(0)
+
     #
     # for i in range(len(img_texts)):
     #     print(img_texts[i])
@@ -366,10 +384,15 @@ if __name__ == '__main__':
         print('cys: ', cys.shape)
         print('target: ', target.shape)
         print('target_text: ', target_texts.shape)
-        # print(label_box.shape, label_box)
+        print(label_box.shape, label_box)
         s = time.time()
         out = net(img, img_texts, cxs, cys, target, target_texts)
+        print(out)
         print(time.time() - s)
         break
+
+        # label: [0.5643, 0.5029, 0.0805, 0.1777]
+        # pred: [0.4972, 0.5460, 0.4496, 0.4999]
+        # iou: [0.0637]
 
 
