@@ -498,6 +498,25 @@ class SwinTransformer(nn.Module):
             nn.Linear(6144, embed_dim)
         )
 
+        self.to_target_embedding_list = [
+            nn.Sequential(
+                Rearrange('b c (pn1 h) (pn2 w) -> b (pn1 pn2) (h w c)', pn1=1, pn2=1),
+                nn.Linear(6144, 96)
+            ),
+            nn.Sequential(
+                Rearrange('b c (pn1 h) (pn2 w) -> b (pn1 pn2) (h w c)', pn1=1, pn2=1),
+                nn.Linear(6144, 192)
+            ),
+            nn.Sequential(
+                Rearrange('b c (pn1 h) (pn2 w) -> b (pn1 pn2) (h w c)', pn1=1, pn2=1),
+                nn.Linear(6144, 384)
+            ),
+            nn.Sequential(
+                Rearrange('b c (pn1 h) (pn2 w) -> b (pn1 pn2) (h w c)', pn1=1, pn2=1),
+                nn.Linear(6144, 768)
+            )
+        ]
+
         # absolute position embedding
         patches_resolution = [img_size[0] // patch_size[0], img_size[1] // patch_size[1]]
 
@@ -551,10 +570,13 @@ class SwinTransformer(nn.Module):
 
         x = self.pos_drop(x)
 
-        target = self.to_target_embedding(target)  # [N, 1, 96]
+        # target = self.to_target_embedding(target)  # [N, 1, 96]
+        target_emb_list = [l(target) for l in self.to_target_embedding_list]
+        # for i in target_emb_list:
+        #     print(i.shape)
 
         # x = torch.cat((target, x), dim=1)
-        x += target
+        x += target_emb_list[0]
 
         similarity_matrix = self.similarity_matrix_patch_embed(similarity_matrix)
         similarity_matrix = similarity_matrix.flatten(2).transpose(1, 2)
@@ -565,6 +587,8 @@ class SwinTransformer(nn.Module):
         for i in range(self.num_layers):
             layer = self.layers[i]
             x_out, H, W, x, Wh, Ww = layer(x, Wh, Ww)
+            if i < 3:
+                x += target_emb_list[i + 1]
 
             if i in self.out_indices:
                 norm_layer = getattr(self, f'norm{i}')

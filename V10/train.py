@@ -80,12 +80,12 @@ class Trainer:
             train_loss += loss.item()
 
             batch_cost = time.time() - batch_start
-            if i % 50 == 0:
-                logger.train.info(
-                    '[epoch:{}/{}] [iter:{}/{}] global_step:{}, loss:{}, lr:{:.9f}, reader_cost:{:.2f}s, batch_cost:{:.2f}s, speed:{:.1f}/s'.format(
-                        epoch, self.epochs, i + 1, self.train_loader_len, self.global_step, loss.item(), lr,
-                        reader_cost,
-                        batch_cost, cur_batch_size / batch_cost))
+
+            logger.train.info(
+                '[epoch:{}/{}] [iter:{}/{}] global_step:{}, loss:{}, lr:{:.9f}, reader_cost:{:.2f}s, batch_cost:{:.2f}s, speed:{:.1f}/s'.format(
+                    epoch, self.epochs, i + 1, self.train_loader_len, self.global_step, loss.item(), lr,
+                    reader_cost,
+                    batch_cost, cur_batch_size / batch_cost))
 
             batch_start = time.time()
 

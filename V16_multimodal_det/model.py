@@ -122,7 +122,7 @@ class LoFTREncoderLayer(nn.Module):
 class LocalFeatureTransformer(nn.Module):
     """A Local Feature Transformer (LoFTR) module."""
 
-    def __init__(self, embed_dim=768, num_heads=8, depth=4):
+    def __init__(self, embed_dim, num_heads, depth):
         super(LocalFeatureTransformer, self).__init__()
 
         self.d_model = embed_dim
@@ -163,7 +163,7 @@ class LocalFeatureTransformer(nn.Module):
 
 class PatchEmbed(nn.Module):
 
-    def __init__(self, in_chans=3, embed_dim=768):
+    def __init__(self, in_chans, embed_dim):
         super().__init__()
 
         # self.proj = nn.Conv2d(in_chans, embed_dim, kernel_size=(32, 52), stride=(16, 26))
@@ -232,6 +232,7 @@ class ViT(nn.Module):
         # print('target: ', target.shape)
 
         _, x = self.transformer(target, img)
+        print('x: ',x.shape)
 
         x = x.mean(dim=1)
 

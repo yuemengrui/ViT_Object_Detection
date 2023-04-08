@@ -160,6 +160,14 @@ if __name__ == '__main__':
     print(time.time() - start)
     print(out.shape)
     print(out)
+    if out.cpu().data.max(1)[1][0] == 1:
+
+        score = torch.softmax(out, dim=1)
+        print(score)
+        print(score[0][1])
+        print(float(score[0][1]))
+        print(score[0][1] > 0.5)
+    # print(out.data.max(1)[1][0] == 1)
     # pred = out.data.cpu().numpy().tolist()
     # print(type(pred))
     # print(pred)

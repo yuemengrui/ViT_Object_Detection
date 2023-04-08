@@ -347,8 +347,10 @@ class MatchNet(nn.Module):
         target = rearrange(target, 'b c h w -> b (h w) c')
 
         x = self.transformer(img, target)
+        print(x.shape)
 
         x = x.permute(0, 2, 1)
+        print(x.shape)
 
         x = x.mean(dim=1).sigmoid()
 

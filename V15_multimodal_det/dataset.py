@@ -285,16 +285,16 @@ class ViTSegDataset(Dataset):
         return len(self.data_list)
 
 
-# if __name__ == '__main__':
+if __name__ == '__main__':
 #     import torch.nn.functional as F
 #     from loss import generalized_box_iou, box_iou
-#     from model import ViT
-#
-#     net = ViT()
+    from model import ViT
+
+    net = ViT()
 #     # num_1 = 0
 #     # num_0 = 0
 #
-#     dataset = ViTSegDataset(dataset_dir='/Users/yuemengrui/Data/RPA_UI/train_data_prebox')
+    dataset = ViTSegDataset(dataset_dir='/Users/yuemengrui/Data/RPA_UI/train_data_prebox')
 #     # img, target, label_box = dataset[1]
 #     # cv2.imshow('im', img)
 #     # cv2.waitKey(0)
@@ -326,9 +326,9 @@ class ViTSegDataset(Dataset):
 #     # print('w_1: ', w_1)
 #     # print('w_0: ', w_0)
 #     #     dataset[i]
-#     train_loader = DataLoader(dataset, batch_size=1, shuffle=True, drop_last=True, collate_fn=dataset.collate)
-#     #
-#     for img, img_texts, img_text_lengths, img_boxes, target, target_texts, target_text_lengths, label_box in train_loader:
+    train_loader = DataLoader(dataset, batch_size=1, shuffle=True, drop_last=True, collate_fn=dataset.collate)
+    #
+    for img, img_texts, img_text_lengths, img_boxes, target, target_texts, target_text_lengths, label_box in train_loader:
 #         print("====================")
 #         print(img.shape)
 #         print(img_texts.shape)
@@ -340,11 +340,11 @@ class ViTSegDataset(Dataset):
 #         print(label_box.shape)
 #         print(label_box)
 #
-#         s = time.time()
-#         out = net(img, img_boxes, img_texts, img_text_lengths, target, target_texts, target_text_lengths)
-#         print(out.shape)
-#         print(out)
-#         print(time.time() - s)
+        s = time.time()
+        out = net(img, img_boxes, img_texts, img_text_lengths, target, target_texts, target_text_lengths)
+        print(out.shape)
+        print(out)
+        print(time.time() - s)
 #         iou, _ = box_iou(out, label_box)
 #         print(type(iou))
 #         print(type(float(iou)), float(iou))
@@ -352,4 +352,4 @@ class ViTSegDataset(Dataset):
 #         # x = generalized_box_iou(out, label_box)
 #         # print(x)
 #         # print((1 - torch.diag(x)).sum())
-#         break
+        break

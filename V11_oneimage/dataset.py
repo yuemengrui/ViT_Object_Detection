@@ -87,8 +87,8 @@ class ViTSegDataset(Dataset):
 
             data_list.append({'img_path': img_path, 'boxes': boxes})
 
-        print(data_list[0])
-        return data_list[0]
+        print(data_list[0]['img_path'])
+        return [data_list[0]]
 
     def __getitem__(self, idx):
         try:

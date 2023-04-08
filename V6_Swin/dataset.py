@@ -22,30 +22,6 @@ def crop_ok(target_box, binary, threshold=0.4):
     return False
 
 
-class ImagePadding(object):
-
-    def __init__(self, rate=512 / 832, value=0):
-        """
-        :param rate: rate = h / w
-        """
-        self.rate = rate
-        self.value = value
-
-    def __call__(self, img):
-        ori_h, ori_w = img.shape[:2]
-
-        if ori_h / ori_w > self.rate:
-            new_w = ori_h / self.rate
-            border = int((new_w - ori_w) / 2)
-            img = cv2.copyMakeBorder(img, 0, 0, border, border, cv2.BORDER_CONSTANT, value=self.value)
-        elif ori_h / ori_w < self.rate:
-            new_h = ori_w * self.rate
-            border = int((new_h - ori_h) / 2)
-            img = cv2.copyMakeBorder(img, border, border, 0, 0, cv2.BORDER_CONSTANT, value=self.value)
-
-        return img
-
-
 class ImageResize(object):
 
     def __init__(self, size=(832, 512)):
@@ -69,9 +45,6 @@ class ViTSegDataset(Dataset):
         self.target_w_h_rate = target_w_h_rate
         self.threshold = threshold
 
-        self.image_padding = ImagePadding(value=255)
-        self.label_padding = ImagePadding()
-        self.target_padding = ImagePadding(0.5)
         self.image_resize = ImageResize()
         self.target_resize = ImageResize(size=(64, 32))
 
@@ -141,15 +114,12 @@ class ViTSegDataset(Dataset):
 
             label[target_box[1]:target_box[3], target_box[0]:target_box[2]] = 1
 
-            img = self.image_padding(img)
             img, _ = self.image_resize(img)
             img = self.transform(img)
 
-            target = self.target_padding(target)
             target, _ = self.target_resize(target)
             target = self.transform(target)
 
-            label = self.label_padding(label)
             label, _ = self.image_resize(label)
             label = torch.from_numpy(label)
 
@@ -173,7 +143,7 @@ if __name__ == '__main__':
     # l1 = []
     num_0 = 0
     num_1 = 0
-    for i in range(10):
+    for i in range(337):
         # s = time.time()
         img, target, label = dataset[i]
 

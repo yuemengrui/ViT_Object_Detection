@@ -114,9 +114,9 @@ class ViTSegDataset(Dataset):
 
             label = self.image_resize(label)
 
-            # img = self.transform(img)
-            # target = self.transform(target)
-            # label = torch.from_numpy(label)
+            img = self.transform(img)
+            target = self.transform(target)
+            label = torch.from_numpy(label)
 
             return img, target, label
 
@@ -129,24 +129,30 @@ class ViTSegDataset(Dataset):
 
 
 if __name__ == '__main__':
-    dataset = ViTSegDataset(dataset_dir='/Users/yuemengrui/Data/RPAUI/train_data_prebox')
+    dataset = ViTSegDataset(dataset_dir='/Users/yuemengrui/Data/RPA_UI/train_data_prebox')
+    train_loader = DataLoader(dataset, batch_size=1, shuffle=True, drop_last=True)
+    for img, target, label in train_loader:
+        print(img.shape)
+        print(target.shape)
+        print(label.shape)
+        break
     # for _ in range(10):
     #     img, target, label = dataset[0]
 
-    num_0 = 0
-    num_1 = 0
-    for i in range(367):
-        print(i)
-        #     # s = time.time()
-        img, target, label = dataset[i]
-
-        num_1 += np.sum(label == 1)
-        num_0 += np.sum(label == 0)
-
-    num_0 = num_0 / 367
-    num_1 = num_1 / 367
-    print(num_0, num_1, num_0 / num_1)
-    # 420971.479 5012.520 83.983
+    # num_0 = 0
+    # num_1 = 0
+    # for i in range(367):
+    #     print(i)
+    #     #     # s = time.time()
+    #     img, target, label = dataset[i]
+    #
+    #     num_1 += np.sum(label == 1)
+    #     num_0 += np.sum(label == 0)
+    #
+    # num_0 = num_0 / 367
+    # num_1 = num_1 / 367
+    # print(num_0, num_1, num_0 / num_1)
+    # # 420971.479 5012.520 83.983
     # 421607.057 4376.942 96.324
     # 421209.283 4774.716 88.216
     # 421361.051 4622.948 91.145

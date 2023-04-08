@@ -26,7 +26,7 @@ class Trainer:
         self.configs = configs
 
         self.save_dir = self.configs.get('save_dir')
-        self.best_model_save_path = os.path.join(self.save_dir, 'model_best.pth')
+        self.best_model_save_path = os.path.join(self.save_dir, 'model_best_9297.pth')
         if self.configs.get('device') == 'cpu':
             self.device = torch.device('cpu')
         else:
@@ -199,6 +199,7 @@ class Trainer:
         self.model = ViT(dim=512, depth=6, heads=8, mlp_dim=512)
 
         self.criterion = nn.BCELoss()
+        self.criterion = nn.MSELoss()
         # weight = torch.tensor([1, 90.0]).to(self.device)
         # self.criterion = nn.CrossEntropyLoss(weight=weight, size_average=True, ignore_index=255, reduction='mean')
 

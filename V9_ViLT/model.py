@@ -281,7 +281,7 @@ class VisionTransformer(nn.Module):
         img = torch.cat((cls_tokens, img), dim=1)
         img = img + self.pos_embed
         img = self.pos_drop(img)
-        img += self.token_type_embeddings(torch.zeros(B, 1).long())
+        img += self.token_type_embeddings(torch.zeros(B, 1).long().cuda())
 
         target = self.target_patch_embed(target)
         target = target.flatten(2).transpose(1, 2)
@@ -289,7 +289,7 @@ class VisionTransformer(nn.Module):
         target = torch.cat((target_cls_tokens, target), dim=1)
         target = target + self.target_pos_embed
         target = self.pos_drop(target)
-        target += self.token_type_embeddings(torch.ones(B, 1).long())
+        target += self.token_type_embeddings(torch.ones(B, 1).long().cuda())
 
         x = torch.cat((target, img), dim=1)
 

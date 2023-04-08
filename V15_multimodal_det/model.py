@@ -199,7 +199,8 @@ class ViT(nn.Module):
 
         self.pos_drop = nn.Dropout(p=drop_rate)
 
-        self.boxes_embedding = nn.Linear(8, embed_dim)  # edge feat is a float
+        self.boxes_embedding = nn.Linear(8, embed_dim)
+        # self.text_embedding = nn.Linear(64, embed_dim)
         self.text_embedding = nn.Embedding(6624, embed_dim)
         self.lstm = LSTM(input_size=embed_dim, hidden_size=embed_dim, num_layers=1, batch_first=True,
                          bidirectional=True)
@@ -227,14 +228,16 @@ class ViT(nn.Module):
 
         target = self.pos_drop(target)
 
+        print('img_boxes: ', img_boxes.shape)
         boxes_embeding = self.boxes_embedding(img_boxes).unsqueeze(0)
-        # print('boxes_emb: ', boxes_embeding.shape)
+        print('boxes_emb: ', boxes_embeding.shape)
+        print('img_texts: ', img_texts.shape)
         img_text_embeding = self.text_embedding(img_texts)
-        # print('img_text_emb: ', img_text_embeding.shape)
+        print('img_text_emb: ', img_text_embeding.shape)
         img_text_embeding = self.lstm_text_embeding(img_text_embeding, img_text_lengths)
-        # print('img_text_emb: ', img_text_embeding.shape)
+        print('img_text_emb: ', img_text_embeding.shape)
         img_text_embeding = F.normalize(img_text_embeding).unsqueeze(0)
-        # print('img_text_emb: ', img_text_embeding.shape)
+        print('img_text_emb: ', img_text_embeding.shape)
 
         target_text_embeding = self.text_embedding(target_texts)
         # print('target_text_emb: ', target_text_embeding.shape)

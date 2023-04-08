@@ -231,29 +231,30 @@ class ViTSegDataset(Dataset):
 
             target_box = all_boxes[random.randint(0, len(all_boxes) - 1)]
 
-            target = img[target_box[1]:target_box[3], target_box[0]:target_box[2]]
+            # target = img[target_box[1]:target_box[3], target_box[0]:target_box[2]]
 
             label[target_box[1]:target_box[3], target_box[0]:target_box[2]] = 1
 
             img, label = self.image_random_scale_resize(img, label)
 
-            img_h, img_w = img.shape[:2]
-            cv2.imwrite(temp_img_path, img)
-            cv2.imwrite(temp_target_path, target)
+            # img_h, img_w = img.shape[:2]
+            # cv2.imwrite(temp_img_path, img)
+            # cv2.imwrite(temp_target_path, target)
 
             img, label, h_scale, w_scale = self.image_resize(img, label)
-            target = self.target_resize(target)
+            # target = self.target_resize(target)
 
-            img_texts, img_text_lengths, img_boxes, target_texts, target_text_lengths = self.ocr_res_handler(img_h,
-                                                                                                             img_w,
-                                                                                                             h_scale,
-                                                                                                             w_scale)
+            # img_texts, img_text_lengths, img_boxes, target_texts, target_text_lengths = self.ocr_res_handler(img_h,
+            #                                                                                                  img_w,
+            #                                                                                                  h_scale,
+            #                                                                                                  w_scale)
 
-            img = self.transform(img).unsqueeze(0)
-            target = self.transform(target).unsqueeze(0)
-            label = torch.from_numpy(label).unsqueeze(0)
+            # img = self.transform(img).unsqueeze(0)
+            # target = self.transform(target).unsqueeze(0)
+            # label = torch.from_numpy(label).unsqueeze(0)
 
-            return img, img_texts, img_text_lengths, img_boxes, target, target_texts, target_text_lengths, label
+            return label
+            # return img, img_texts, img_text_lengths, img_boxes, target, target_texts, target_text_lengths, label
 
         except Exception as e:
             print(e)
@@ -289,14 +290,33 @@ class ViTSegDataset(Dataset):
     def __len__(self):
         return len(self.data_list)
 
-# if __name__ == '__main__':
-# from model import ViT
 
-# net = ViT()
+if __name__ == '__main__':
+    # from model import ViT
 
-# dataset = ViTSegDataset(dataset_dir='/Users/yuemengrui/Data/RPA_UI/train_data_prebox')
-# for i in range(len(dataset)):
-#     print(i)
+    # net = ViT()
+    num_1 = 0
+    num_0 = 0
+
+    dataset = ViTSegDataset(dataset_dir='/Users/yuemengrui/Data/RPA_UI/train_data_prebox')
+    for i in range(len(dataset)):
+        print(i)
+        label = dataset[i]
+        num_1 += np.sum(label == 1)
+        num_0 += np.sum(label == 0)
+
+    all = 512*832*367
+    n_1 = num_1 / all
+    n_0 = num_0 / all
+    w_1 = 0.5 / n_1
+    w_0 = 0.5 / n_0
+    print(num_0)
+    print(num_1)
+    print(all)
+    print(n_1)
+    print(n_0)
+    print('w_1: ', w_1)
+    print('w_0: ', w_0)
 #     dataset[i]
 # train_loader = DataLoader(dataset, batch_size=1, shuffle=True, drop_last=True, collate_fn=dataset.collate)
 

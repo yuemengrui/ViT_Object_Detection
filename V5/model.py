@@ -371,8 +371,8 @@ class ViT(nn.Module):
             nn.Linear(6144, dim)
         )
 
-        self.pos_embedding = nn.Parameter(torch.randn(1, 1024 + 1, dim))
-        # self.pos_embedding = nn.Parameter(torch.randn(1, num_patches, dim))
+        # self.pos_embedding = nn.Parameter(torch.randn(1, 1024 + 1, dim))
+        self.pos_embedding = nn.Parameter(torch.randn(1, num_patches, dim))
 
         # self.cls_token = nn.Parameter(torch.randn(1, 1, dim))
 
@@ -402,14 +402,13 @@ class ViT(nn.Module):
         target = self.to_target_embedding(target_img)  # [N, 1, 512]
 
         b, n, _ = x.shape
+        x += self.pos_embedding[:, :]  # [N, 1024, 512]
         # cls_tokens = repeat(self.cls_token, '1 1 d -> b 1 d', b=b)
         #
         x = torch.cat((target, x), dim=1)  # [N, 1025, 512]
 
         #
         # target = torch.cat((cls_tokens, target), dim=1)
-
-        x += self.pos_embedding[:, :(n + 1)]  # [N, 1025, 512]
 
         x = self.dropout(x)
 
@@ -427,6 +426,7 @@ class ViT(nn.Module):
 
 if __name__ == '__main__':
     import time
+
     model = ViT()
 
     img = torch.randn((1, 3, 512, 1024))

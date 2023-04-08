@@ -177,6 +177,7 @@ class ViT(nn.Module):
         x = self.to_patch_embedding(img)
 
         target = self.to_target_embedding(target_img)
+        print('target: ', target.shape)
 
         b, n, _ = x.shape
         # cls_tokens = repeat(self.cls_token, '1 1 d -> b 1 d', b=b)

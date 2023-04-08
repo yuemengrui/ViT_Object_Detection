@@ -23,13 +23,7 @@ class BasicConvBlock(nn.Module):
             nn.ReLU()
         )
 
-        self.ln2 = nn.LayerNorm(out_channels)
-
-        self.conv_1 = nn.Sequential(
-            nn.Conv2d(in_channels=out_channels, out_channels=1, kernel_size=1, stride=1,
-                      padding=padding),
-            nn.ReLU()
-        )
+        # self.ln2 = nn.LayerNorm(out_channels)
 
     def forward(self, input):
         x = self.conv1(input)
@@ -39,14 +33,12 @@ class BasicConvBlock(nn.Module):
         x = x.transpose(-2, -1).contiguous().view(B, C, H, W)
 
         x = self.conv2(x)
-        B, C, H, W = x.shape
-        x = x.view(B, C, -1).transpose(-2, -1).contiguous()
-        x = self.ln2(x)
-        feature = x.transpose(-2, -1).contiguous().view(B, C, H, W)
+        # B, C, H, W = x.shape
+        # x = x.view(B, C, -1).transpose(-2, -1).contiguous()
+        # x = self.ln2(x)
+        # x = x.transpose(-2, -1).contiguous().view(B, C, H, W)
 
-        low = self.conv_1(feature)
-
-        return feature, low
+        return x
 
 
 class MatchUNet(nn.Module):
@@ -54,8 +46,8 @@ class MatchUNet(nn.Module):
     def __init__(self):
         super().__init__()
 
-        self.img_conv1 = BasicConvBlock(3, 32, 3, 2)
-        self.target_conv1 = BasicConvBlock(3, 32, 3)
+        self.img_conv1 = BasicConvBlock(3, 32, 7, 4, 2)
+        self.target_conv1 = BasicConvBlock(3, 32, 3, 2)
 
         self.img_conv2 = BasicConvBlock(32, 64, 3, 2)
         self.target_conv2 = BasicConvBlock(32, 64, 3)
@@ -74,25 +66,38 @@ class MatchUNet(nn.Module):
     def forward(self, x, target):
         ori_h, ori_w = x.shape[2:]
 
-        x, f_img = self.img_conv1(x)
-        target, f_target = self.target_conv1(target)
-        f1 = F.conv2d(f_img, f_target)
+        x = self.img_conv1(x)
+        print(x.shape)
+        target = self.target_conv1(target)
+        print(target.shape)
+        f1 = F.conv2d(x, target)
+        print(f1.shape)
 
-        x, f_img = self.img_conv2(x)
-        target, f_target = self.target_conv2(target)
-        f2 = F.conv2d(f_img, f_target)
+        x = self.img_conv2(x)
+        print(x.shape)
+        target = self.target_conv2(target)
+        print(target.shape)
+        f2 = F.conv2d(x, target)
+        print(f2.shape)
 
-        x, f_img = self.img_conv3(x)
-        target, f_target = self.target_conv3(target)
-        f3 = F.conv2d(f_img, f_target)
+        x = self.img_conv3(x)
+        print(x.shape)
+        target = self.target_conv3(target)
+        print(target.shape)
+        f3 = F.conv2d(x, target)
+        print(f3.shape)
 
-        x, f_img = self.img_conv4(x)
-        target, f_target = self.target_conv4(target)
-        f4 = F.conv2d(f_img, f_target)
+        x = self.img_conv4(x)
+        print(x.shape)
+        target = self.target_conv4(target)
+        print(target.shape)
+        f4 = F.conv2d(x, target)
+        print(f4.shape)
 
-        _, f_img = self.img_conv5(x)
-        _, f_target = self.target_conv5(target)
-        f5 = F.conv2d(f_img, f_target)
+        x = self.img_conv5(x)
+        target = self.target_conv5(target)
+        f5 = F.conv2d(x, target)
+        print(f5.shape)
 
         ff = torch.cat((f2, f3, f4, f5), dim=1)
         ff = F.interpolate(ff, size=f1.shape[2:], mode='bilinear', align_corners=True)

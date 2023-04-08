@@ -322,7 +322,7 @@ class VisionTransformer(nn.Module):
     def forward(self, img, target):
 
         img = self.patch_embed(img)
-        # print(img.shape)
+        print(img.shape)
 
         img = img + self.pos_embed
         img = self.pos_drop(img)

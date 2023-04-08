@@ -258,15 +258,17 @@ if __name__ == '__main__':
     # image 1920 1080 -> 960 512
     # patch              60   32
     # patch_num          16   16
+    import time
     model = ViT(patch_size=(32, 64), dim=512, depth=6, heads=8, mlp_dim=512)
 
     img = torch.randn((1, 3, 512, 1024))
 
     target_img = torch.randn((1, 3, 32, 64))
-
+    s = time.time()
     out = model(img, target_img)
+    print(time.time() - s)
     print(out.shape)
-    print(out)
+    # print(out)
 
     # corner = CornerHead()
 

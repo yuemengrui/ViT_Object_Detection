@@ -61,8 +61,9 @@ class Trainer:
 
         batch_start = time.time()
         for i, (
-        img, img_texts, img_text_lengths, img_boxes, target, target_texts, target_text_lengths, label) in enumerate(
-                self.train_loader):
+                img, img_texts, img_text_lengths, img_boxes, target, target_texts, target_text_lengths,
+                label) in enumerate(
+            self.train_loader):
             self.global_step += 1
             lr = self.optimizer.param_groups[0]['lr']
 
@@ -121,7 +122,8 @@ class Trainer:
                 target_text_lengths = target_text_lengths.to(self.device)
                 label = label.to(self.device)
 
-                preds = self.model(img, img_boxes, img_texts, img_text_lengths, target, target_texts, target_text_lengths)
+                preds = self.model(img, img_boxes, img_texts, img_text_lengths, target, target_texts,
+                                   target_text_lengths)
 
                 preds = preds.data.cpu().numpy()
                 label = label.cpu().numpy()
@@ -221,7 +223,7 @@ class Trainer:
         # self.criterion = nn.BCELoss()
         # self.criterion = nn.MSELoss()
         # self.criterion = nn.L1Loss()
-        weight = torch.FloatTensor([1.0, 100.0]).to(self.device)
+        weight = torch.FloatTensor([0.5, 48.8]).to(self.device)
         self.criterion = nn.CrossEntropyLoss(weight=weight)
 
         # self.criterion = FocalLoss()
@@ -258,10 +260,12 @@ class Trainer:
         self.train_data_total = len(train_dataset)
         self.val_data_total = len(val_dataset)
 
-        self.train_loader = DataLoader(train_dataset, batch_size=self.configs.get('batch_size'), collate_fn=train_dataset.collate)
+        self.train_loader = DataLoader(train_dataset, batch_size=self.configs.get('batch_size'),
+                                       collate_fn=train_dataset.collate)
         self.train_loader_len = len(self.train_loader)
 
-        self.val_loader = DataLoader(val_dataset, batch_size=1, shuffle=False, drop_last=False, collate_fn=val_dataset.collate)
+        self.val_loader = DataLoader(val_dataset, batch_size=1, shuffle=False, drop_last=False,
+                                     collate_fn=val_dataset.collate)
         self.val_loader_len = len(self.val_loader)
 
         datasrt_msg = '\n---------------Dataset Information---------------\n'

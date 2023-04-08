@@ -171,9 +171,10 @@ class ViTDetDataset(Dataset):
 
 class ViTSegDataset(Dataset):
 
-    def __init__(self, dataset_dir, mode='train', target_size_range=(10, 300), threshold=0.4, **kwargs):
+    def __init__(self, dataset_dir, mode='train', target_w_range=(30, 1000), target_h_range=(20,300), threshold=0.5, **kwargs):
 
-        self.target_size_range = target_size_range
+        self.target_w_range = target_w_range
+        self.target_h_range = target_h_range
         self.threshold = threshold
 
         self.image_padding = ImagePadding()
@@ -337,20 +338,20 @@ class ViTSegDataset(Dataset):
 
 # # print(box)
 # # img_padding = ImagePadding()
-# # img_resize = ImageResize()
+# img_resize = ImageResize()
 # #
-# # img = cv2.imread('/Users/yuemengrui/Data/RPAUI/SAP截图及样本数据/SAP界面截图/出口运量结果界面1.PNG')
-# # print(img.shape[:2])
-# #
-# # new_img = img_padding(img)
-# #
-# # print(new_img.shape[:2])
-# #
-# # cv2.imshow('xx', new_img)
-# # cv2.waitKey(0)
-# #
-# # r_img, _ = img_resize(new_img)
-# # print(r_img.shape[:2])
-# #
-# # cv2.imshow('a', r_img)
+# img = cv2.imread('/Users/yuemengrui/Data/RPAUI/SAP截图及样本数据/SAP界面截图/出口运量结果界面1.PNG')
+# print(img.shape[:2])
+
+# new_img = img_padding(img)
+#
+# print(new_img.shape[:2])
+#
+# cv2.imshow('xx', new_img)
+# cv2.waitKey(0)
+#
+# r_img, _ = img_resize(img)
+# print(r_img.shape[:2])
+
+# cv2.imshow('a', r_img)
 # # cv2.waitKey(0)
